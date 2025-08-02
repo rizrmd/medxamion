@@ -186,6 +186,7 @@ export function useRoot() {
         ? `/${domainKey}${path === "/" ? "" : path}`
         : path;
 
+
       let pageLoader = pageModules[matchedPattern];
       let matchedParams = {};
 
@@ -208,7 +209,14 @@ export function useRoot() {
             break;
           }
         }
+
+        if (!pageLoader && pageModules[path]) {
+          pageLoader = pageModules[path];
+          matchedPattern = '/';
+          matchedParams = {};
+        }
       }
+
 
       if ((window as any).debug_router) {
         console.log(pageModules, pageLoader);
