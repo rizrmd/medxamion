@@ -1,0 +1,413 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../models"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model activity_log {
+  id           Int       @id @default(autoincrement())
+  log_name     String?   @db.VarChar(255)
+  description  String    @db.VarChar(255)
+  subject_id   Int?
+  subject_type String?   @db.VarChar(255)
+  causer_id    Int?
+  causer_type  String?   @db.VarChar(255)
+  properties   String?
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+
+  @@index([log_name], map: "activity_log_log_name_index")
+}
+
+model answers {
+  id                Int       @id @default(autoincrement())
+  question_id       Int
+  answer            String?
+  is_correct_answer Boolean   @default(false)
+  created_at        DateTime? @db.Timestamp(0)
+  updated_at        DateTime? @db.Timestamp(0)
+  questions         questions @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "answers_question_id_foreign")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model attachables {
+  attachment_id   String      @db.Uuid
+  attachable_id   Int
+  attachable_type String      @db.VarChar(255)
+  attachments     attachments @relation(fields: [attachment_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "attachables_attachment_id_foreign")
+
+  @@index([attachment_id, attachable_id, attachable_type], map: "attachables_attachment_id_attachable_id_attachable_type_index")
+  @@ignore
+}
+
+model attachments {
+  id          String        @id @db.Uuid
+  type        String        @default("attachment") @db.VarChar(255)
+  uploaded_by Int
+  title       String?       @db.VarChar(255)
+  path        String?       @db.VarChar(255)
+  mime        String?       @db.VarChar(255)
+  description String?
+  options     String?
+  created_at  DateTime?     @db.Timestamp(0)
+  updated_at  DateTime?     @db.Timestamp(0)
+  attachables attachables[] @ignore
+  users       users         @relation(fields: [uploaded_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "attachments_uploaded_by_foreign")
+}
+
+model attempt_question {
+  id          Int       @id @default(autoincrement())
+  attempt_id  Int
+  question_id Int
+  answer_id   Int?
+  answer_hash String?   @db.VarChar(255)
+  answer      String?
+  is_correct  Boolean   @default(false)
+  score       Decimal   @default(0) @db.Decimal(8, 2)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+  attempts    attempts  @relation(fields: [attempt_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "attempt_question_attempt_id_foreign")
+  questions   questions @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "attempt_question_question_id_foreign")
+}
+
+model attempts {
+  id               Int                @id @default(autoincrement())
+  attempted_by     Int
+  exam_id          Int
+  delivery_id      Int
+  ip_address       String             @db.VarChar(255)
+  started_at       DateTime?          @db.Timestamp(0)
+  ended_at         DateTime?          @db.Timestamp(0)
+  extra_minute     Int                @default(0)
+  score            Decimal            @default(0) @db.Decimal(8, 2)
+  progress         Int                @default(0)
+  penalty          Int                @default(0)
+  created_at       DateTime?          @db.Timestamp(0)
+  updated_at       DateTime?          @db.Timestamp(0)
+  finish_scoring   Boolean            @default(false)
+  attempt_question attempt_question[]
+  takers           takers             @relation(fields: [attempted_by], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "attempts_attempted_by_foreign")
+  deliveries       deliveries         @relation(fields: [delivery_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "attempts_delivery_id_foreign")
+  exams            exams              @relation(fields: [exam_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "attempts_exam_id_foreign")
+}
+
+model categories {
+  id                Int                 @id @default(autoincrement())
+  type              String              @default("category") @db.VarChar(255)
+  code              String?             @db.VarChar(255)
+  parent            Int                 @default(0)
+  name              String              @db.VarChar(255)
+  description       String?
+  created_at        DateTime?           @db.Timestamp(0)
+  updated_at        DateTime?           @db.Timestamp(0)
+  category_item     category_item[]     @ignore
+  category_question category_question[] @ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model category_item {
+  category_id Int
+  item_id     Int
+  categories  categories @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "category_item_category_id_foreign")
+  items       items      @relation(fields: [item_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "category_item_item_id_foreign")
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model category_question {
+  category_id Int
+  question_id Int
+  categories  categories @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "category_question_category_id_foreign")
+  questions   questions  @relation(fields: [question_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "category_question_question_id_foreign")
+
+  @@ignore
+}
+
+model deliveries {
+  id              Int              @id @default(autoincrement())
+  exam_id         Int
+  group_id        Int
+  name            String?          @db.VarChar(255)
+  scheduled_at    DateTime?        @db.Timestamp(0)
+  duration        Int              @default(60)
+  ended_at        DateTime?        @db.Timestamp(0)
+  is_anytime      Boolean          @default(false)
+  automatic_start Boolean          @default(true)
+  is_finished     DateTime?        @db.Timestamp(0)
+  last_status     String?          @db.VarChar(255)
+  display_name    String?          @db.VarChar(255)
+  created_at      DateTime?        @db.Timestamp(0)
+  updated_at      DateTime?        @db.Timestamp(0)
+  attempts        attempts[]
+  exams           exams            @relation(fields: [exam_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "deliveries_exam_id_foreign")
+  groups          groups           @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "deliveries_group_id_foreign")
+  delivery_taker  delivery_taker[] @ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model delivery_taker {
+  delivery_id Int
+  taker_id    Int
+  token       String?    @db.VarChar(255)
+  is_login    Boolean    @default(false)
+  deliveries  deliveries @relation(fields: [delivery_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "delivery_taker_delivery_id_foreign")
+  takers      takers     @relation(fields: [taker_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "delivery_taker_taker_id_foreign")
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model exam_item {
+  exam_id Int
+  item_id Int
+  order   Int   @default(0)
+  exams   exams @relation(fields: [exam_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "exam_item_exam_id_foreign")
+  items   items @relation(fields: [item_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "exam_item_item_id_foreign")
+
+  @@ignore
+}
+
+model exams {
+  id           Int          @id @default(autoincrement())
+  code         String       @db.VarChar(255)
+  name         String       @db.VarChar(255)
+  description  String?
+  options      String?
+  is_random    Boolean      @default(false)
+  created_at   DateTime?    @db.Timestamp(0)
+  updated_at   DateTime?    @db.Timestamp(0)
+  is_mcq       Boolean?
+  is_interview Boolean      @default(false)
+  attempts     attempts[]
+  deliveries   deliveries[]
+  exam_item    exam_item[]  @ignore
+}
+
+model failed_jobs {
+  id         BigInt   @id @default(autoincrement())
+  uuid       String   @unique(map: "failed_jobs_uuid_unique") @db.VarChar(255)
+  connection String
+  queue      String
+  payload    String
+  exception  String
+  failed_at  DateTime @default(now()) @db.Timestamp(0)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model group_taker {
+  taker_id   Int
+  group_id   Int
+  taker_code String? @db.VarChar(255)
+  groups     groups  @relation(fields: [group_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "group_taker_group_id_foreign")
+  takers     takers  @relation(fields: [taker_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "group_taker_taker_id_foreign")
+
+  @@ignore
+}
+
+model groups {
+  id              Int           @id @default(autoincrement())
+  name            String        @db.VarChar(255)
+  description     String?
+  code            String?       @unique(map: "groups_code_unique") @db.VarChar(255)
+  last_taker_code Int           @default(1)
+  created_at      DateTime?     @db.Timestamp(0)
+  updated_at      DateTime?     @db.Timestamp(0)
+  closed_at       DateTime?     @db.Timestamp(0)
+  deliveries      deliveries[]
+  group_taker     group_taker[] @ignore
+}
+
+model items {
+  id            Int             @id @default(autoincrement())
+  title         String          @db.VarChar(255)
+  content       String?
+  type          String          @default("simple") @db.VarChar(255)
+  is_vignette   Boolean         @default(false)
+  is_random     Boolean         @default(false)
+  score         Int             @default(0)
+  created_at    DateTime?       @db.Timestamp(0)
+  updated_at    DateTime?       @db.Timestamp(0)
+  category_item category_item[] @ignore
+  exam_item     exam_item[]     @ignore
+  questions     questions[]
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement())
+  migration String @db.VarChar(255)
+  batch     Int
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model password_resets {
+  email      String    @db.VarChar(255)
+  token      String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+
+  @@index([email], map: "password_resets_email_index")
+  @@ignore
+}
+
+model permission_role {
+  id            Int         @id @default(autoincrement())
+  permission_id Int
+  role_id       Int
+  granted       Boolean     @default(true)
+  created_at    DateTime?   @db.Timestamp(0)
+  updated_at    DateTime?   @db.Timestamp(0)
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permission_role_permission_id_foreign")
+  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permission_role_role_id_foreign")
+
+  @@index([permission_id], map: "permission_role_permission_id_index")
+  @@index([role_id], map: "permission_role_role_id_index")
+}
+
+model permission_user {
+  id            Int         @id @default(autoincrement())
+  permission_id Int
+  user_id       Int
+  granted       Boolean     @default(true)
+  created_at    DateTime?   @db.Timestamp(0)
+  updated_at    DateTime?   @db.Timestamp(0)
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permission_user_permission_id_foreign")
+  users         users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permission_user_user_id_foreign")
+
+  @@index([permission_id], map: "permission_user_permission_id_index")
+  @@index([user_id], map: "permission_user_user_id_index")
+}
+
+model permissions {
+  id              Int               @id @default(autoincrement())
+  name            String            @db.VarChar(255)
+  slug            String            @db.VarChar(255)
+  description     String?           @db.VarChar(255)
+  model           String?           @db.VarChar(255)
+  created_at      DateTime?         @db.Timestamp(0)
+  updated_at      DateTime?         @db.Timestamp(0)
+  permission_role permission_role[]
+  permission_user permission_user[]
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement())
+  tokenable_type String    @db.VarChar(255)
+  tokenable_id   BigInt
+  name           String    @db.VarChar(255)
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?
+  last_used_at   DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model questions {
+  id                Int                 @id @default(autoincrement())
+  item_id           Int
+  type              String              @default("simple") @db.VarChar(255)
+  question          String?
+  is_random         Boolean             @default(false)
+  score             Int                 @default(100)
+  order             Int                 @default(0)
+  created_at        DateTime?           @db.Timestamp(0)
+  updated_at        DateTime?           @db.Timestamp(0)
+  answers           answers[]
+  attempt_question  attempt_question[]
+  category_question category_question[] @ignore
+  items             items               @relation(fields: [item_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "questions_item_id_foreign")
+}
+
+model register_data {
+  id          BigInt    @id @default(autoincrement())
+  taker_id    BigInt
+  taker_code  String?   @db.VarChar(255)
+  delivery_id BigInt
+  group_id    BigInt
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+}
+
+model role_user {
+  id         Int       @id @default(autoincrement())
+  role_id    Int
+  user_id    Int
+  granted    Boolean   @default(true)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  roles      roles     @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "role_user_role_id_foreign")
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "role_user_user_id_foreign")
+
+  @@index([role_id], map: "role_user_role_id_index")
+  @@index([user_id], map: "role_user_user_id_index")
+}
+
+model roles {
+  id              Int               @id @default(autoincrement())
+  name            String            @db.VarChar(255)
+  slug            String            @unique(map: "roles_slug_unique") @db.VarChar(255)
+  description     String?           @db.VarChar(255)
+  parent_id       Int?
+  created_at      DateTime?         @db.Timestamp(0)
+  updated_at      DateTime?         @db.Timestamp(0)
+  permission_role permission_role[]
+  role_user       role_user[]
+  roles           roles?            @relation("rolesToroles", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "roles_parent_id_foreign")
+  other_roles     roles[]           @relation("rolesToroles")
+}
+
+model sessions {
+  id            String  @id @db.VarChar(255)
+  user_id       BigInt?
+  ip_address    String? @db.VarChar(45)
+  user_agent    String?
+  payload       String
+  last_activity Int
+
+  @@index([last_activity], map: "sessions_last_activity_index")
+  @@index([user_id], map: "sessions_user_id_index")
+}
+
+model takers {
+  id             Int              @id @default(autoincrement())
+  name           String           @db.VarChar(255)
+  reg            String?          @db.VarChar(255)
+  email          String?          @db.VarChar(255)
+  password       String?          @db.VarChar(255)
+  is_verified    Boolean          @default(false)
+  created_at     DateTime?        @db.Timestamp(0)
+  updated_at     DateTime?        @db.Timestamp(0)
+  attempts       attempts[]
+  delivery_taker delivery_taker[] @ignore
+  group_taker    group_taker[]    @ignore
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model users {
+  id                        Int               @id @default(autoincrement())
+  avatar                    String?           @db.VarChar(255)
+  name                      String            @db.VarChar(255)
+  username                  String            @unique(map: "users_username_unique") @db.VarChar(255)
+  email                     String            @unique(map: "users_email_unique") @db.VarChar(255)
+  email_verified_at         DateTime?         @db.Timestamp(0)
+  password                  String            @db.VarChar(255)
+  gender                    String            @default("other") @db.VarChar(255)
+  profile_photo_path        String?           @db.VarChar(2048)
+  birthplace                String?           @db.VarChar(255)
+  birthday                  DateTime?         @db.Date
+  remember_token            String?           @db.VarChar(100)
+  last_login                DateTime?         @db.Timestamp(0)
+  created_at                DateTime?         @db.Timestamp(0)
+  updated_at                DateTime?         @db.Timestamp(0)
+  deleted_at                DateTime?         @db.Timestamp(0)
+  two_factor_secret         String?
+  two_factor_recovery_codes String?
+  attachments               attachments[]
+  permission_user           permission_user[]
+  role_user                 role_user[]
+}
