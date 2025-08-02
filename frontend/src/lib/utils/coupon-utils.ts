@@ -1,4 +1,4 @@
-import { api } from "@/lib/gen/main.esensi";
+import { api } from "@/lib/gen/exam";
 
 export interface CouponResponse {
   status: "success" | "failed";

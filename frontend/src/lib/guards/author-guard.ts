@@ -2,7 +2,7 @@ import {
   betterAuth,
   type AuthClientGetSessionAPIResponse,
 } from "@/lib/better-auth";
-import { api } from "@/lib/gen/publish.esensi";
+import { api } from "@/lib/gen/exam";
 import { navigate } from "@/lib/router";
 
 export const authorGuard = async () => {
