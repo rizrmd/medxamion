@@ -79,7 +79,7 @@ export async function getSession(headers: Headers): Promise<AuthSession | null> 
         userData = {
           id: taker.id,
           email: taker.email || '',
-          username: taker.reg || taker.email,
+          username: taker.reg || taker.email || undefined,
           name: taker.name,
           user_type: "taker",
           taker: taker
