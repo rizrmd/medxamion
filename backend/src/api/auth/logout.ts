@@ -12,28 +12,43 @@ export default defineAPI({
       if (!sessionToken) {
         return {
           success: false,
-          message: "No session token provided",
+          message: "Token tidak ditemukan",
           status: 401
         };
       }
 
-      // Delete the session
-      await db.auth_session.delete({
-        where: {
-          id: sessionToken
+      // Find and delete session with this token
+      const sessions = await db.sessions.findMany();
+      
+      for (const session of sessions) {
+        try {
+          const payload = JSON.parse(session.payload);
+          if (payload.token === sessionToken) {
+            await db.sessions.delete({
+              where: { id: session.id }
+            });
+            
+            return {
+              success: true,
+              message: "Logout berhasil"
+            };
+          }
+        } catch (e) {
+          // Skip malformed sessions
+          continue;
         }
-      });
+      }
 
       return {
-        success: true,
-        message: "Logged out successfully"
+        success: false,
+        message: "Sesi tidak ditemukan",
+        status: 401
       };
-
     } catch (error) {
       console.error("Logout error:", error);
       return {
         success: false,
-        message: "Internal server error",
+        message: "Terjadi kesalahan server",
         status: 500
       };
     }

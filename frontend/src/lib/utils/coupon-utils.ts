@@ -1,4 +1,4 @@
-import { api } from "@/lib/gen/exam";
+import { api } from "@/lib/gen/api";
 
 export interface CouponResponse {
   status: "success" | "failed";

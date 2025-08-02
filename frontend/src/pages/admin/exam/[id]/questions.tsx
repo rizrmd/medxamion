@@ -1,6 +1,6 @@
 import { useLocal } from "@/lib/hooks/use-local";
-import { useNavigate } from "@/lib/router";
-import { api } from "@/lib/gen/exam";
+import { navigate } from "@/lib/router";
+import { api } from "@/lib/gen/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,6 @@ interface Props {
 }
 
 export default function ExamQuestionsPage({ id }: Props) {
-  const navigate = useNavigate();
   const { toast } = useToast();
   
   const local = useLocal({
@@ -303,17 +302,17 @@ export default function ExamQuestionsPage({ id }: Props) {
   };
 
   const addAnswer = () => {
-    local.questionDialog.form.answers.push({ answer: "", is_correct_answer: false });
+    local.questionDialog.form.answers!.push({ answer: "", is_correct_answer: false });
     local.render();
   };
 
   const removeAnswer = (index: number) => {
-    local.questionDialog.form.answers.splice(index, 1);
+    local.questionDialog.form.answers!.splice(index, 1);
     local.render();
   };
 
   const setCorrectAnswer = (index: number) => {
-    local.questionDialog.form.answers = local.questionDialog.form.answers.map((a, i) => ({
+    local.questionDialog.form.answers = local.questionDialog.form.answers!.map((a, i) => ({
       ...a,
       is_correct_answer: i === index
     }));
@@ -428,7 +427,7 @@ export default function ExamQuestionsPage({ id }: Props) {
                                     <span className={answer.is_correct_answer ? "text-green-600 font-medium" : ""}>
                                       {answer.answer}
                                     </span>
-                                    {answer.is_correct_answer && <Badge variant="success" className="text-xs">Benar</Badge>}
+                                    {answer.is_correct_answer && <Badge className="text-xs bg-green-100 text-green-800">Benar</Badge>}
                                   </div>
                                 ))}
                               </div>
@@ -628,13 +627,13 @@ export default function ExamQuestionsPage({ id }: Props) {
                 </div>
                 
                 <div className="space-y-2">
-                  {local.questionDialog.form.answers.map((answer, index) => (
+                  {local.questionDialog.form.answers!.map((answer, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <span className="font-medium w-8">{String.fromCharCode(65 + index)}.</span>
                       <Input
                         value={answer.answer}
                         onChange={(e) => {
-                          local.questionDialog.form.answers[index].answer = e.target.value;
+                          local.questionDialog.form.answers![index].answer = e.target.value;
                           local.render();
                         }}
                         placeholder={`Pilihan ${String.fromCharCode(65 + index)}`}

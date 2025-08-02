@@ -215,7 +215,7 @@ export function useAuth() {
     hasUserType: auth.hasUserType,
     isAdmin: auth.isAdmin,
     isTaker: auth.isTaker,
-    user: auth.user,
-    token: auth.token,
+    user: snapshot.user,
+    token: auth.token(),
   };
 }

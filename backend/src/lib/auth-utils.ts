@@ -3,7 +3,7 @@
  */
 
 export interface AuthenticatedUser {
-  id: string;
+  id: string | number;
   email: string;
   username?: string;
   name?: string;
@@ -16,7 +16,7 @@ export interface AuthenticatedUser {
 
 export interface AuthSession {
   token: string;
-  expires_at: Date;
+  expires_at: string;
   user_type: string;
   user: AuthenticatedUser;
 }
@@ -33,60 +33,84 @@ export async function getSession(headers: Headers): Promise<AuthSession | null> 
       return null;
     }
 
-    // Find and validate session
-    const session = await db.auth_session.findFirst({
-      where: {
-        id: sessionToken,
-        expires_at: {
-          gt: new Date()
-        }
-      },
-      include: {
-        auth_user: {
-          include: {
-            customer: true,
-            author: true,
-            internal: true
+    // Find session with this token
+    const sessions = await db.sessions.findMany();
+    let foundSession = null;
+    let sessionPayload: any = null;
+    
+    for (const session of sessions) {
+      try {
+        const payload = JSON.parse(session.payload);
+        if (payload.token === sessionToken) {
+          // Check if session is expired
+          if (new Date(payload.expires_at) < new Date()) {
+            await db.sessions.delete({ where: { id: session.id } });
+            return null;
           }
-        },
-        taker: {
-          include: {
-            groups: true
-          }
+          
+          foundSession = session;
+          sessionPayload = payload;
+          break;
         }
+      } catch (e) {
+        continue;
       }
-    });
+    }
 
-    if (!session) {
+    if (!foundSession || !sessionPayload) {
       return null;
     }
 
-    // Prepare user data based on user type
-    let userData: AuthenticatedUser;
+    // Update last activity
+    await db.sessions.update({
+      where: { id: foundSession.id },
+      data: { last_activity: Math.floor(Date.now() / 1000) }
+    });
 
-    if (session.user_type === "taker") {
-      userData = {
-        id: `taker_${session.taker?.id}`,
-        email: session.taker?.email || '',
-        username: session.taker?.username,
-        name: session.taker?.name,
-        user_type: "taker",
-        taker: session.taker
-      };
-    } else if (session.auth_user) {
-      const { password, ...userWithoutPassword } = session.auth_user;
-      userData = {
-        ...userWithoutPassword,
-        user_type: session.user_type
-      } as AuthenticatedUser;
-    } else {
+    // Get user data based on user type
+    let userData: AuthenticatedUser | null = null;
+    
+    if (sessionPayload.user_type === "taker") {
+      const taker = await db.takers.findUnique({
+        where: { id: parseInt(sessionPayload.user_id) }
+      });
+      
+      if (taker) {
+        userData = {
+          id: taker.id,
+          email: taker.email || '',
+          username: taker.reg || taker.email,
+          name: taker.name,
+          user_type: "taker",
+          taker: taker
+        };
+      }
+    } else if (sessionPayload.user_type === "internal") {
+      const user = await db.users.findUnique({
+        where: { id: parseInt(sessionPayload.user_id) }
+      });
+      
+      if (user) {
+        const { password, ...userWithoutPassword } = user;
+        userData = {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          name: user.name,
+          user_type: "internal",
+          internal: userWithoutPassword
+        };
+      }
+    }
+
+    if (!userData) {
       return null;
     }
 
     return {
       token: sessionToken,
-      expires_at: session.expires_at,
-      user_type: session.user_type,
+      expires_at: sessionPayload.expires_at,
+      user_type: sessionPayload.user_type,
       user: userData
     };
 

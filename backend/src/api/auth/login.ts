@@ -7,121 +7,100 @@ export default defineAPI({
   url: "/api/auth/login",
   async handler(arg: { username: string; password: string; user_type?: string }) {
     try {
-      const { username, password, user_type = "customer" } = arg;
+      const { username, password, user_type = "taker" } = arg;
 
       // Find user by email or username based on user type
       let user: any = null;
       let userTableId: string | null = null;
 
       switch (user_type) {
-        case "customer":
-          user = await db.auth_user.findFirst({
+        case "taker":
+          // Takers login with their reg number or email
+          const taker = await db.takers.findFirst({
             where: {
               OR: [
                 { email: username },
-                { username: username }
-              ],
-              id_customer: { not: null }
-            },
-            include: {
-              customer: true
+                { reg: username }
+              ]
             }
           });
-          userTableId = user?.id_customer;
+          
+          if (taker) {
+            user = {
+              id: taker.id,
+              email: taker.email,
+              username: taker.reg || taker.email,
+              password: taker.password,
+              user_type: "taker",
+              taker: taker
+            };
+            userTableId = taker.id.toString();
+          }
           break;
 
-        case "taker":
-          // Takers login with their username/email
-          const taker = await db.takers.findFirst({
+        case "internal":
+          // Internal users (admins) use the users table
+          const internalUser = await db.users.findFirst({
             where: {
               OR: [
                 { email: username },
                 { username: username }
               ]
-            },
-            include: {
-              groups: true
             }
           });
           
-          if (taker) {
-            // For takers, we use their record directly (no auth_user table)
+          if (internalUser) {
             user = {
-              id: `taker_${taker.id}`,
-              email: taker.email,
-              username: taker.username,
-              password: taker.password,
-              taker: taker
+              id: internalUser.id,
+              email: internalUser.email,
+              username: internalUser.username,
+              password: internalUser.password,
+              user_type: "internal",
+              internal: internalUser
             };
-            userTableId = taker.id;
+            userTableId = internalUser.id.toString();
           }
           break;
 
-        case "author":
-          user = await db.auth_user.findFirst({
-            where: {
-              OR: [
-                { email: username },
-                { username: username }
-              ],
-              id_author: { not: null }
-            },
-            include: {
-              author: true
-            }
-          });
-          userTableId = user?.id_author;
-          break;
-
-        case "internal":
-          user = await db.auth_user.findFirst({
-            where: {
-              OR: [
-                { email: username },
-                { username: username }
-              ],
-              id_internal: { not: null }
-            },
-            include: {
-              internal: true
-            }
-          });
-          userTableId = user?.id_internal;
-          break;
+        default:
+          return {
+            success: false,
+            message: "Tipe pengguna tidak valid"
+          };
       }
 
       if (!user) {
         return {
           success: false,
-          message: "Invalid credentials",
-          status: 401
+          message: "Username atau password salah"
         };
       }
 
       // Verify password
-      const isValidPassword = await bcrypt.compare(password, user.password);
-      if (!isValidPassword) {
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (!passwordMatch) {
         return {
           success: false,
-          message: "Invalid credentials", 
-          status: 401
+          message: "Username atau password salah"
         };
       }
 
       // Generate session token
       const sessionToken = crypto.randomBytes(32).toString('hex');
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      const sessionId = crypto.randomBytes(16).toString('hex');
 
       // Create session
-      await db.auth_session.create({
+      await db.sessions.create({
         data: {
-          id: sessionToken,
-          id_auth_user: user_type === "taker" ? null : user.id,
-          id_taker: user_type === "taker" ? userTableId : null,
-          user_type: user_type,
-          expires_at: expiresAt,
-          created_at: new Date(),
-          updated_at: new Date()
+          id: sessionId,
+          user_id: BigInt(userTableId!),
+          payload: JSON.stringify({
+            token: sessionToken,
+            user_type: user_type,
+            user_id: userTableId,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          }),
+          last_activity: Math.floor(Date.now() / 1000)
         }
       });
 
@@ -132,20 +111,16 @@ export default defineAPI({
         success: true,
         data: {
           user: userWithoutPassword,
-          session: {
-            token: sessionToken,
-            expires_at: expiresAt,
-            user_type: user_type
-          }
-        }
+          token: sessionToken,
+          session_id: sessionId
+        },
+        message: "Login berhasil"
       };
-
     } catch (error) {
       console.error("Login error:", error);
       return {
         success: false,
-        message: "Internal server error",
-        status: 500
+        message: "Terjadi kesalahan saat login"
       };
     }
   }
