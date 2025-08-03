@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { ECrud } from "@/components/core/ecrud/ecrud";
 import type { CRUDConfig, BreadcrumbItem } from "@/components/core/ecrud/ecrud";
-import { api } from "@/lib/gen/api";
+import { api } from "@/lib/gen/internal.esensi";
 
 interface Taker {
   id: number;
@@ -22,22 +22,7 @@ interface Taker {
 
 const takersConfig: CRUDConfig<Taker> = {
   entityName: "Peserta",
-  primaryKey: "id",
-  searchField: "name",
-  filterableColumns: ["name", "email", "status"],
-  filters: [
-    { key: "name", label: "Nama", type: "text" },
-    { key: "email", label: "Email", type: "text" },
-    {
-      key: "status",
-      label: "Status",
-      type: "select",
-      options: [
-        { value: "active", label: "Aktif" },
-        { value: "inactive", label: "Nonaktif" },
-      ],
-    },
-  ],
+  filters: [],
   columns: [
     {
       key: "reg",
@@ -61,7 +46,7 @@ const takersConfig: CRUDConfig<Taker> = {
     {
       key: "status",
       label: "Status",
-      render: (value) => (
+      render: (value: any) => (
         <span className={`px-2 py-1 text-xs rounded-full ${
           value === 'active' 
             ? 'bg-green-100 text-green-800' 
@@ -110,7 +95,6 @@ const takersConfig: CRUDConfig<Taker> = {
       label: "Password",
       type: "password",
       placeholder: "Biarkan kosong untuk menggunakan no. registrasi",
-      hideInEdit: false,
     },
     {
       name: "status",
@@ -124,9 +108,8 @@ const takersConfig: CRUDConfig<Taker> = {
     },
   ],
   softDelete: {
-    enabled: true,
+    enabled: false,
     field: "deleted_at",
-    method: "null_is_available",
   },
 };
 
@@ -152,7 +135,7 @@ export default function AdminTakersPage() {
   }
 
   // Define breadcrumbs
-  const breadcrumbs: BreadcrumbItem[] = [
+  const breadcrumbs = [
     { label: "Dashboard", href: "/admin" },
     { label: "Manajemen Peserta" }
   ];

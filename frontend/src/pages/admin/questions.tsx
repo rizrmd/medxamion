@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { ECrud } from "@/components/core/ecrud/ecrud";
 import type { CRUDConfig } from "@/components/core/ecrud/ecrud";
-import { api } from "@/lib/gen/api";
+import { api } from "@/lib/gen/internal.esensi";
 
 interface Question {
   id: number;
@@ -42,37 +42,13 @@ interface QuestionCategory {
 
 const questionsConfig: CRUDConfig<Question> = {
   entityName: "Soal",
-  primaryKey: "id",
-  searchField: "question",
-  filterableColumns: ["question", "type", "difficulty"],
-  filters: [
-    { key: "question", label: "Pertanyaan", type: "text" },
-    {
-      key: "type",
-      label: "Tipe",
-      type: "select",
-      options: [
-        { value: "multiple_choice", label: "Pilihan Ganda" },
-        { value: "essay", label: "Essay" },
-      ],
-    },
-    {
-      key: "difficulty",
-      label: "Tingkat Kesulitan",
-      type: "select",
-      options: [
-        { value: "easy", label: "Mudah" },
-        { value: "medium", label: "Sedang" },
-        { value: "hard", label: "Sulit" },
-      ],
-    },
-  ],
+  filters: [],
   columns: [
     {
       key: "question",
       label: "Pertanyaan",
       sortable: true,
-      render: (value) => (
+      render: (value: any) => (
         <div className="max-w-md">
           <p className="truncate">{value}</p>
         </div>
@@ -82,7 +58,7 @@ const questionsConfig: CRUDConfig<Question> = {
       key: "type",
       label: "Tipe",
       sortable: true,
-      render: (value) => (
+      render: (value: any) => (
         <span className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-800">
           {value === 'multiple_choice' ? 'Pilihan Ganda' : 'Essay'}
         </span>
@@ -92,7 +68,7 @@ const questionsConfig: CRUDConfig<Question> = {
       key: "difficulty",
       label: "Tingkat",
       sortable: true,
-      render: (value) => (
+      render: (value: any) => (
         <span className={`px-2 py-1 text-xs rounded ${
           value === 'easy' 
             ? 'bg-green-100 text-green-800'
@@ -113,9 +89,9 @@ const questionsConfig: CRUDConfig<Question> = {
     {
       key: "question_categories",
       label: "Kategori",
-      render: (value: QuestionCategory[]) => (
+      render: (value: any) => (
         <div className="flex flex-wrap gap-1">
-          {value?.map((qc) => (
+          {value?.map((qc: any) => (
             <span key={qc.id} className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-800">
               {qc.category?.name}
             </span>
@@ -173,9 +149,8 @@ const questionsConfig: CRUDConfig<Question> = {
     // Categories would be handled as a relation field
   ],
   softDelete: {
-    enabled: true,
+    enabled: false,
     field: "deleted_at",
-    method: "null_is_available",
   },
 };
 

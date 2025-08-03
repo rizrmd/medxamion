@@ -83,3 +83,9 @@ frontend/src/lib/gen
 frontend/src/lib/gen/*
 backend/src/gen
 backend/src/gen/*
+
+
+frontend/src/lib/gen
+frontend/src/lib/gen/*
+backend/src/gen
+backend/src/gen/*

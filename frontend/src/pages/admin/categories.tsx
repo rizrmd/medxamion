@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { ECrud } from "@/components/core/ecrud/ecrud";
 import type { CRUDConfig } from "@/components/core/ecrud/ecrud";
-import { api } from "@/lib/gen/api";
+import { api } from "@/lib/gen/internal.esensi";
 
 interface Category {
   id: number;
@@ -21,12 +21,7 @@ interface Category {
 
 const categoriesConfig: CRUDConfig<Category> = {
   entityName: "Kategori",
-  primaryKey: "id",
-  searchField: "name",
-  filterableColumns: ["name"],
-  filters: [
-    { key: "name", label: "Nama Kategori", type: "text" },
-  ],
+  filters: [],
   columns: [
     {
       key: "name",
@@ -63,9 +58,8 @@ const categoriesConfig: CRUDConfig<Category> = {
     },
   ],
   softDelete: {
-    enabled: true,
+    enabled: false,
     field: "deleted_at",
-    method: "null_is_available",
   },
 };
 

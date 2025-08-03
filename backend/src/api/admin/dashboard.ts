@@ -29,74 +29,68 @@ export default defineAPI({
         examStats
       ] = await Promise.all([
         // Total registered takers
-        db.takers.count({
-          where: {
-            deleted_at: null,
-            status: 'active'
-          }
-        }),
+        db.takers.count(),
         
         // Total questions
-        db.questions.count({
+        db.questions.count(),
+        
+        // Active exams (ongoing attempts)
+        db.attempts.count({
           where: {
-            deleted_at: null
+            started_at: {
+              not: null
+            },
+            ended_at: null
           }
         }),
         
-        // Active exams (ongoing)
-        db.exam_results.count({
+        // Today's completed attempts
+        db.attempts.count({
           where: {
-            status: 'in_progress',
-            created_at: {
+            ended_at: {
+              not: null,
               gte: new Date(new Date().setHours(0, 0, 0, 0))
             }
           }
         }),
         
-        // Today's completed exams
-        db.exam_results.count({
+        // Recent exam results (last 5 attempts)
+        db.attempts.findMany({
           where: {
-            status: 'completed',
-            created_at: {
-              gte: new Date(new Date().setHours(0, 0, 0, 0))
+            ended_at: {
+              not: null
             }
-          }
-        }),
-        
-        // Recent exam results (last 5)
-        db.exam_results.findMany({
-          where: {
-            status: 'completed'
           },
           include: {
-            taker: {
+            takers: {
               select: {
                 id: true,
                 name: true,
                 reg: true
               }
             },
-            exam: {
+            exams: {
               select: {
                 id: true,
-                title: true
+                name: true
               }
             }
           },
           orderBy: {
-            finished_at: 'desc'
+            ended_at: 'desc'
           },
           take: 5
         }),
         
         // Overall exam statistics
-        db.exam_results.aggregate({
+        db.attempts.aggregate({
           where: {
-            status: 'completed'
+            ended_at: {
+              not: null
+            }
           },
           _avg: {
-            score: true,
-            duration: true
+            score: true
           },
           _count: {
             id: true
@@ -105,9 +99,11 @@ export default defineAPI({
       ]);
       
       // Calculate passing rate
-      const passingResults = await db.exam_results.count({
+      const passingResults = await db.attempts.count({
         where: {
-          status: 'completed',
+          ended_at: {
+            not: null
+          },
           score: {
             gte: 70
           }
@@ -118,16 +114,12 @@ export default defineAPI({
       const passingRate = Math.round((passingResults / totalCompleted) * 100);
       
       // Get category distribution for questions
-      const categoryStats = await db.$queryRaw`
-        SELECT 
-          c.name as category_name,
-          COUNT(DISTINCT qc.question_id) as question_count
-        FROM categories c
-        LEFT JOIN question_categories qc ON c.id = qc.category_id
-        LEFT JOIN questions q ON qc.question_id = q.id AND q.deleted_at IS NULL
-        GROUP BY c.id, c.name
-        ORDER BY question_count DESC
-      `;
+      const categoryStats = await db.categories.findMany({
+        select: {
+          id: true,
+          name: true
+        }
+      });
       
       return {
         success: true,
@@ -137,22 +129,23 @@ export default defineAPI({
             totalQuestions,
             activeExams,
             todayResults,
-            averageScore: Math.round(examStats._avg.score || 0),
-            averageDuration: Math.round(examStats._avg.duration || 0),
+            averageScore: Math.round(Number(examStats._avg.score) || 0),
             passingRate,
             totalExams: totalCompleted
           },
-          recentResults: recentResults.map(result => ({
+          recentResults: recentResults.map((result: any) => ({
             id: result.id,
-            takerName: result.taker?.name,
-            takerReg: result.taker?.reg,
-            examTitle: result.exam?.title,
+            takerName: result.takers?.name,
+            takerReg: result.takers?.reg,
+            examTitle: result.exams?.name,
             score: result.score,
-            duration: result.duration,
-            finishedAt: result.finished_at,
+            finishedAt: result.ended_at,
             passed: result.score >= 70
           })),
-          categoryDistribution: categoryStats
+          categoryDistribution: categoryStats.map((cat: any) => ({
+            category_name: cat.name,
+            question_count: 0
+          }))
         }
       };
     } catch (error) {

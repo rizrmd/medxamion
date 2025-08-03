@@ -41,7 +41,7 @@ export default defineAPI({
           }
           
           if (arg.taker_id) {
-            where.taker_id = arg.taker_id;
+            where.attempted_by = arg.taker_id;
           }
           
           if (arg.date_from || arg.date_to) {
@@ -55,17 +55,17 @@ export default defineAPI({
           }
           
           const [results, total] = await Promise.all([
-            db.exam_results.findMany({
+            db.attempts.findMany({
               where,
               include: {
-                exam: {
+                exams: {
                   select: {
                     id: true,
-                    title: true,
+                    name: true,
                     description: true
                   }
                 },
-                taker: {
+                takers: {
                   select: {
                     id: true,
                     reg: true,
@@ -78,7 +78,7 @@ export default defineAPI({
               skip: offset,
               take: limit
             }),
-            db.exam_results.count({ where })
+            db.attempts.count({ where })
           ]);
           
           return {
@@ -87,19 +87,19 @@ export default defineAPI({
               results: results.map(result => ({
                 id: result.id,
                 exam_id: result.exam_id,
-                exam_name: result.exam?.title,
-                taker_id: result.taker_id,
-                taker_name: result.taker?.name,
-                taker_reg: result.taker?.reg,
+                exam_name: result.exams?.name,
+                taker_id: result.attempted_by,
+                taker_name: result.takers?.name,
+                taker_reg: result.takers?.reg,
                 score: result.score,
-                total_questions: result.total_questions,
-                correct_answers: result.correct_answers,
-                wrong_answers: result.wrong_answers,
-                unanswered: result.unanswered,
-                duration: result.duration,
-                status: result.status,
+                total_questions: 0,
+                correct_answers: 0,
+                wrong_answers: 0,
+                unanswered: 0,
+                duration: 0,
+                status: result.ended_at ? 'completed' : 'in_progress',
                 started_at: result.started_at,
-                finished_at: result.finished_at,
+                finished_at: result.ended_at,
                 created_at: result.created_at
               })),
               pagination: {
@@ -119,16 +119,16 @@ export default defineAPI({
             };
           }
           
-          const result = await db.exam_results.findUnique({
+          const result = await db.attempts.findUnique({
             where: { id: arg.exam_id },
             include: {
-              exam: true,
-              taker: true,
-              exam_answers: {
+              exams: true,
+              takers: true,
+              attempt_question: {
                 include: {
-                  question: {
+                  questions: {
                     include: {
-                      question_options: true
+                      answers: true
                     }
                   }
                 }
@@ -156,23 +156,23 @@ export default defineAPI({
               COUNT(CASE WHEN score >= 70 THEN 1 END) as passed_count,
               COUNT(CASE WHEN score < 70 THEN 1 END) as failed_count,
               AVG(duration) as average_duration
-            FROM exam_results
+            FROM attempts
             WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
           `;
           
           const todayStats = await db.$queryRaw`
             SELECT 
               COUNT(*) as today_exams,
-              COUNT(DISTINCT taker_id) as active_takers
-            FROM exam_results
+              COUNT(DISTINCT attempted_by) as active_takers
+            FROM attempts
             WHERE DATE(created_at) = CURRENT_DATE
           `;
           
           return {
             success: true,
             data: {
-              overall: stats[0],
-              today: todayStats[0]
+              overall: (stats as any)[0],
+              today: (todayStats as any)[0]
             }
           };
           

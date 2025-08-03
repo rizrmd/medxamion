@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Users, BookOpen, BarChart3, Settings, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/gen/api";
+import { api } from "@/lib/gen/internal.esensi";
 
 export default function AdminDashboard() {
   const { user, isAuthenticated, isAdmin, logout, initialized } = useAuth();

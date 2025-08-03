@@ -8,7 +8,7 @@ export default defineAPI({
   handler: crudHandler("takers", {
     primaryKey: "id",
     softDelete: {
-      enabled: true,
+      enabled: false,
       field: "deleted_at",
       method: "null_is_available"
     },
@@ -45,7 +45,7 @@ export default defineAPI({
       }
     },
     create: {
-      beforeCreate: async (data) => {
+      before: async (data: any) => {
         // Generate registration number if not provided
         if (!data.reg) {
           const count = await db.takers.count();
@@ -54,9 +54,11 @@ export default defineAPI({
         
         // Hash password
         if (data.password) {
+          const bcrypt = await import('bcryptjs');
           data.password = await bcrypt.hash(data.password, 10);
         } else {
           // Generate default password from reg number
+          const bcrypt = await import('bcryptjs');
           data.password = await bcrypt.hash(data.reg, 10);
         }
         
@@ -69,9 +71,10 @@ export default defineAPI({
       }
     },
     update: {
-      beforeUpdate: async (data, existingData) => {
-        // Hash password if changed
-        if (data.password && data.password !== existingData.password) {
+      before: async (data: any) => {
+        // Hash password if provided
+        if (data.password) {
+          const bcrypt = await import('bcryptjs');
           data.password = await bcrypt.hash(data.password, 10);
         }
         

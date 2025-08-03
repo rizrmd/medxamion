@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useLocal } from "@/lib/hooks/use-local";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { api } from "@/lib/gen/api";
+import { api } from "@/lib/gen/internal.esensi";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
