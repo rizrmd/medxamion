@@ -24,8 +24,5 @@
     "**/*.ts",
     "**/*.tsx"
   ],
-  "exclude": [
-    "src/lib/gen/**/*",
-    "src/lib/gen/**/*"
-  ]
+  "exclude": []
 }

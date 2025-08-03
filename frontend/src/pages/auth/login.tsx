@@ -33,6 +33,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     local.showError = false;
+    local.render();
 
     try {
       await login(local.form.username, local.form.password, local.form.userType);
@@ -47,6 +48,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       local.showError = true;
+      local.render();
     }
   };
 
@@ -78,6 +80,7 @@ export default function LoginPage() {
                 value={local.form.userType} 
                 onValueChange={(value) => {
                   local.form.userType = value;
+                  local.render();
                 }}
               >
                 <SelectTrigger>
@@ -101,6 +104,7 @@ export default function LoginPage() {
                 value={local.form.username}
                 onChange={(e) => {
                   local.form.username = e.target.value;
+                  local.render();
                 }}
                 placeholder="Masukkan username atau email"
                 required
@@ -116,6 +120,7 @@ export default function LoginPage() {
                 value={local.form.password}
                 onChange={(e) => {
                   local.form.password = e.target.value;
+                  local.render();
                 }}
                 placeholder="Masukkan password"
                 required

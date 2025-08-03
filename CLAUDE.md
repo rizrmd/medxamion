@@ -10,14 +10,21 @@
 - Use `useLocal` instead of `useState` for component-specific state
 - Can only be used in one component
 - Includes async initialization support
+- **IMPORTANT: Always call `local.render()` after modifying state to trigger re-renders**
 
 ```
 import { useLocal } from "@/lib/hooks/use-local";
 const local = useLocal({data: []}, async () => {
     // async init function.
     local.data = ['loaded'];
-    local.render();
+    local.render(); // Required to trigger re-render
 })
+
+// In event handlers, always call render() after state changes:
+const handleClick = () => {
+    local.data.push('new item');
+    local.render(); // Required to trigger re-render
+}
 ```
 
 ### Shared State (Valtio)
@@ -99,6 +106,18 @@ Frontend usage:
 ```
 import { api } from "@/lib/gen/auth.esensi";
 const res = await api.auth_user({ username: username! });
+```
+
+### API Request Object Access
+- To access the request object in API handlers, use:
+```
+const req = this.req!;
+```
+
+### API Type Generation
+- To regenerate API types after changes, use:
+```
+bun gen
 ```
 
 ## 7. TypeScript Import Rules

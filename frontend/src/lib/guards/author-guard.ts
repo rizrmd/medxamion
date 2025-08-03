@@ -2,6 +2,7 @@ import {
   betterAuth,
   type AuthClientGetSessionAPIResponse,
 } from "@/lib/better-auth";
+// @ts-ignore - Generated file
 import { api } from "@/lib/gen/api";
 import { navigate } from "@/lib/router";
 

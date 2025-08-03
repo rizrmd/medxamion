@@ -1,6 +1,7 @@
 import type { CRUDConfig } from "@/components/core/ecrud/ecrud";
 import { ECrud } from "@/components/core/ecrud/ecrud";
 import { useCrud } from "@/lib/crud-hook";
+// @ts-ignore - Generated file
 import { api } from "@/lib/gen/api";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/utils";
