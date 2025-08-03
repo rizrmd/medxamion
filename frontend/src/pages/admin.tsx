@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Users, BookOpen, BarChart3, Settings, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/gen/internal.esensi";
+import { api } from "@/lib/api";
 
 export default function AdminDashboard() {
   const { user, isAuthenticated, isAdmin, logout, initialized } = useAuth();
@@ -27,7 +27,7 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await api.admin_dashboard({});
+      const res = await api.admin_dashboard();
       if (res.success) {
         setStats(res.data);
       }

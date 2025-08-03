@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { ECrud } from "@/components/core/ecrud/ecrud";
 import type { CRUDConfig } from "@/components/core/ecrud/ecrud";
-import { api } from "@/lib/gen/internal.esensi";
+import { api } from "@/lib/api";
 
 interface Category {
   id: number;

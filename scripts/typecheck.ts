@@ -9,7 +9,7 @@ import { join } from "path";
 const FRONTEND_TSCONFIG = "frontend/tsconfig.json";
 const BACKEND_TSCONFIG = "backend/tsconfig.json";
 const GEN_FOLDER = "frontend/src/lib/gen";
-const GEN_BACKUP = join(tmpdir(), `esensi-gen-backup-${Date.now()}`);
+const GEN_BACKUP = join(tmpdir(), `medxamion-gen-backup-${Date.now()}`);
 
 // Helper function to handle cross-device moves and permission errors
 async function safeMove(source: string, destination: string) {
@@ -65,18 +65,7 @@ async function main() {
         await safeMove(baseUrlPath, join(GEN_FOLDER, "base-url.ts"));
       }
       
-      // Create empty API files with any exports
-      const apiFiles = [
-        "auth.esensi.ts",
-        "chapter.esensi.ts", 
-        "main.esensi.ts",
-        "internal.esensi.ts",
-        "publish.esensi.ts"
-      ];
-      
-      for (const file of apiFiles) {
-        await writeFile(join(GEN_FOLDER, file), "export const api = {} as any;\n");
-      }
+      // No need to create esensi API files anymore
     }
     
     // Frontend typecheck with backend references disabled

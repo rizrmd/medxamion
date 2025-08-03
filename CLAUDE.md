@@ -131,7 +131,7 @@ export default defineAPI({
 
 Frontend usage:
 ```
-import { api } from "@/lib/gen/auth.esensi";
+import { api } from "@/lib/api";
 const res = await api.auth_user({ username: username! });
 ```
 
@@ -169,8 +169,8 @@ import type { User } from "better-auth/types";
 - Don't assume frontend page props are always available (can be empty or null during navigation)
 
 ## 10. URL Routing
-- Exclude domain prefix from URLs
-- Example: `/chapter.esensi/title/buku-chapter-10` → `/title/buku-chapter-10`
+- Standard routing without domain prefixes
+- Example: `/title/buku-chapter-10`
 
 ## 11. Git Push Policy
 - **NEVER use `git push --no-verify`** - this bypasses important checks

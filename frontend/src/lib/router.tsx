@@ -86,40 +86,13 @@ export function matchRoute(
   // Clean up the path first
   const cleanPath = path.replace(/\/+/g, "/").replace(/\/$/, "");
 
-  // If path doesn't start with domain but pattern has domain, try adding it
-  if (
-    currentDomain &&
-    !cleanPath.includes(".esensi") &&
-    routePattern.pattern.includes(".esensi")
-  ) {
-    const domainSegment = routePattern.pattern.split("/")[1];
-
-    if (domainSegment === currentDomain && isDomainSegment(domainSegment)) {
-      // Try matching with domain added
-      const pathWithDomain = `/${domainSegment}${cleanPath}`;
-      const match = pathWithDomain.match(routePattern.regex);
-      if (match) {
-        const params: Params = {};
-        routePattern.paramNames.forEach((name, index) => {
-          const matched =
-            match[index + (routePattern.pattern.includes(".esensi") ? 2 : 1)];
-          if (matched) {
-            params[name] = matched;
-          }
-        });
-        return params;
-      }
-    }
-  }
-
   // Regular matching
   const match = cleanPath.match(routePattern.regex);
   if (!match) return null;
 
   const params: Params = {};
   routePattern.paramNames.forEach((name, index) => {
-    const matched =
-      match[index + (routePattern.pattern.includes(".esensi") ? 2 : 1)];
+    const matched = match[index + 1];
     if (matched) {
       params[name] = matched;
     }

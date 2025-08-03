@@ -217,8 +217,7 @@ export default function ResourcePage() {
 
 ```typescript
 // Import domain-specific API clients
-import { api } from "@/lib/gen/main.esensi";
-import { api as chapterApi } from "@/lib/gen/chapter.esensi";
+import { api } from "@/lib/api";
 
 // Type-safe API calls
 const response = await api.getBooks({

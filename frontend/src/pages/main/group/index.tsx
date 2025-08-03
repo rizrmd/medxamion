@@ -1,8 +1,7 @@
 import type { CRUDConfig } from "@/components/core/ecrud/ecrud";
 import { ECrud } from "@/components/core/ecrud/ecrud";
 import { useCrud } from "@/lib/crud-hook";
-// @ts-ignore - Generated file
-import { api } from "@/lib/gen/api";
+import { api } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { Users, UserPlus } from "lucide-react";

@@ -66,28 +66,28 @@ async function main() {
 
   switch (command) {
     case "setup":
-      console.log("🔧 Setup Fly.io untuk Esensi...\n");
+      console.log("🔧 Setup Fly.io untuk Medxamion...\n");
       
       // Check if app exists
       console.log("🔍 Memeriksa apakah app sudah ada...");
-      const appExists = await checkResourceExists("app", "fly apps list | grep -w esensi");
+      const appExists = await checkResourceExists("app", "fly apps list | grep -w medxamion");
       
       if (appExists) {
-        console.log("ℹ️  App 'esensi' sudah ada, skip pembuatan app");
+        console.log("ℹ️  App 'medxamion' sudah ada, skip pembuatan app");
       } else {
-        await runCommand("fly apps create esensi", "Membuat app esensi");
+        await runCommand("fly apps create medxamion", "Membuat app medxamion");
         // Set region after creating app
-        await runCommand("fly regions set sin --app esensi", "Set region ke Singapore", true);
+        await runCommand("fly regions set sin --app medxamion", "Set region ke Singapore", true);
       }
 
       // Check if volume exists
       console.log("\n🔍 Memeriksa apakah volume sudah ada...");
-      const volumeExists = await checkResourceExists("volume", "fly volumes list --app esensi | grep esensi_uploads");
+      const volumeExists = await checkResourceExists("volume", "fly volumes list --app medxamion | grep medxamion_uploads");
       
       if (volumeExists) {
-        console.log("ℹ️  Volume 'esensi_uploads' sudah ada, skip pembuatan volume");
+        console.log("ℹ️  Volume 'medxamion_uploads' sudah ada, skip pembuatan volume");
       } else {
-        await runCommand("fly volumes create esensi_uploads --size 10 --app esensi --region sin --yes", "Membuat volume untuk file uploads di Singapore");
+        await runCommand("fly volumes create medxamion_uploads --size 10 --app medxamion --region sin --yes", "Membuat volume untuk file uploads di Singapore");
       }
 
       // Add domains
@@ -99,21 +99,21 @@ async function main() {
       break;
 
     case "secrets":
-      console.log("🔐 Setting secrets untuk Esensi...");
+      console.log("🔐 Setting secrets untuk Medxamion...");
       console.log("\n⚠️  PENTING: Anda perlu menyediakan nilai untuk secret berikut:");
       console.log("1. DATABASE_URL - Connection string untuk database");
       console.log("2. BETTER_AUTH_SECRET - Secret key untuk autentikasi");
       console.log("");
       console.log("Contoh command:");
-      console.log('  fly secrets set DATABASE_URL="postgresql://user:pass@host:5432/dbname" --app esensi');
-      console.log('  fly secrets set BETTER_AUTH_SECRET="your-secret-key-here" --app esensi');
+      console.log('  fly secrets set DATABASE_URL="postgresql://user:pass@host:5432/dbname" --app medxamion');
+      console.log('  fly secrets set BETTER_AUTH_SECRET="your-secret-key-here" --app medxamion');
       console.log("");
       console.log("Optional secrets:");
-      console.log('  fly secrets set GOOGLE_CLIENT_ID="your-google-client-id" --app esensi');
-      console.log('  fly secrets set GOOGLE_CLIENT_SECRET="your-google-client-secret" --app esensi');
+      console.log('  fly secrets set GOOGLE_CLIENT_ID="your-google-client-id" --app medxamion');
+      console.log('  fly secrets set GOOGLE_CLIENT_SECRET="your-google-client-secret" --app medxamion');
       console.log("");
       console.log("Untuk melihat secrets yang sudah diset:");
-      console.log("  fly secrets list --app esensi");
+      console.log("  fly secrets list --app medxamion");
       break;
 
     case "domains":
@@ -126,7 +126,7 @@ async function main() {
       // Check if secrets are set
       console.log("\n🔍 Memeriksa secrets...");
       try {
-        const secretsResult = await $`fly secrets list --app esensi`.quiet();
+        const secretsResult = await $`fly secrets list --app medxamion`.quiet();
         const secrets = secretsResult.stdout.toString();
         
         if (!secrets.includes("DATABASE_URL")) {
@@ -144,18 +144,18 @@ async function main() {
         console.error("⚠️  Tidak bisa mengecek secrets, lanjut deploy...");
       }
       
-      await runCommand("fly deploy --app esensi", "Deploy aplikasi");
+      await runCommand("fly deploy --app medxamion", "Deploy aplikasi");
       console.log("\n✅ Deploy selesai!");
       console.log("Cek status dengan: bun run scripts/fly-deploy.ts status");
       break;
 
     case "status":
       console.log("📊 Status deployment:");
-      await runCommand("fly status --app esensi", "Cek status app");
+      await runCommand("fly status --app medxamion", "Cek status app");
       console.log("\n📍 IP addresses:");
-      await runCommand("fly ips list --app esensi", "List IP addresses");
+      await runCommand("fly ips list --app medxamion", "List IP addresses");
       console.log("\n🔒 SSL Certificates:");
-      await runCommand("fly certs list --app esensi", "List certificates");
+      await runCommand("fly certs list --app medxamion", "List certificates");
       break;
 
     default:
@@ -171,7 +171,7 @@ async function addDomains() {
   // Check existing certificates (domains are managed via certificates in new Fly)
   let existingDomains: string[] = [];
   try {
-    const result = await $`fly certs list --app esensi`.quiet();
+    const result = await $`fly certs list --app medxamion`.quiet();
     existingDomains = result.stdout.toString()
       .split('\n')
       .slice(1) // Skip header
@@ -185,7 +185,7 @@ async function addDomains() {
     if (existingDomains.includes(domain)) {
       console.log(`ℹ️  Domain ${domain} sudah terdaftar`);
     } else {
-      const success = await runCommand(`fly certs add ${domain} --app esensi`, `Menambahkan certificate untuk ${domain}`, true);
+      const success = await runCommand(`fly certs add ${domain} --app medxamion`, `Menambahkan certificate untuk ${domain}`, true);
       if (!success) {
         console.log(`⚠️  Gagal menambahkan ${domain}, mungkin sudah ada atau ada error lain`);
       }

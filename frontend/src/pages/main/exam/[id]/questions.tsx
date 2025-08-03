@@ -1,7 +1,6 @@
 import { useLocal } from "@/lib/hooks/use-local";
 import { navigate } from "@/lib/router";
-// @ts-ignore - Generated file
-import { api } from "@/lib/gen/api";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

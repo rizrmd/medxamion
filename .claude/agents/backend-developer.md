@@ -562,14 +562,12 @@ if (!user.idAuthor) throw new AuthorizationError("Hanya author yang dapat mengak
 
 ## 8. File Organization
 
-### Domain-Based Structure
+### API Structure
 
 ```
 backend/src/api/
-├── main.esensi/       # Main domain APIs
-├── chapter.esensi/    # Chapter domain APIs
-├── publish.esensi/    # Publishing APIs
-├── internal.esensi/   # Admin APIs
+├── admin/             # Admin APIs
+├── auth/              # Authentication APIs
 └── shared/            # Shared APIs
 
 backend/src/lib/
@@ -580,21 +578,13 @@ backend/src/lib/
 └── utils/             # Utility functions
 ```
 
-## 9. Type Generation
+## 9. API Usage
 
 ```typescript
-// After API changes, run: bun gen
+// Frontend API usage
+import { api } from "@/lib/api";
 
-// Generated structure
-export const backendApi = {
-  "main.esensi": {
-    "get_products": ["/api/main/products", getProducts],
-    "create_order": ["/api/main/orders/create", createOrder],
-  },
-  "chapter.esensi": {
-    "get_books": ["/api/chapter/books", getBooks],
-  }
-} as const satisfies ApiDefinitions;
+const response = await api.admin_dashboard();
 ```
 
 ## Key Implementation Rules
