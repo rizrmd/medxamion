@@ -23,6 +23,7 @@ export interface AuthState {
   session: AuthSession | null;
   loading: boolean;
   error: string | null;
+  initialized: boolean;
 }
 
 // Global auth state using Valtio
@@ -31,6 +32,7 @@ export const authState = proxy<AuthState>({
   session: null,
   loading: false,
   error: null,
+  initialized: false,
 });
 
 // API base URL
@@ -68,11 +70,15 @@ export const auth = {
 
       // Store session
       authState.user = data.data.user;
-      authState.session = data.data.session;
+      authState.session = {
+        token: data.data.token,
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        user_type: userType
+      };
       
       // Store token in localStorage for persistence
-      localStorage.setItem('auth_token', data.data.session.token);
-      localStorage.setItem('auth_user_type', data.data.session.user_type);
+      localStorage.setItem('auth_token', data.data.token);
+      localStorage.setItem('auth_user_type', userType);
 
       return data.data;
     } catch (error) {
@@ -187,17 +193,23 @@ export const auth = {
    * Get auth token
    */
   token(): string | null {
-    return authState.session?.token || localStorage.getItem('auth_token');
+    if (authState.session && authState.session.token) {
+      return authState.session.token;
+    }
+    return localStorage.getItem('auth_token');
   },
 
   /**
    * Initialize auth state from localStorage
    */
   async init() {
+    if (authState.initialized) return;
+    
     const token = localStorage.getItem('auth_token');
     if (token) {
       await this.me();
     }
+    authState.initialized = true;
   }
 };
 
@@ -208,14 +220,17 @@ export function useAuth() {
   const snapshot = useSnapshot(authState);
   
   return {
-    ...snapshot,
+    user: snapshot.user,
+    session: snapshot.session,
+    loading: snapshot.loading,
+    error: snapshot.error,
+    initialized: snapshot.initialized,
     login: auth.login,
     logout: auth.logout,
-    isAuthenticated: auth.isAuthenticated,
-    hasUserType: auth.hasUserType,
-    isAdmin: auth.isAdmin,
-    isTaker: auth.isTaker,
-    user: snapshot.user,
-    token: auth.token(),
+    isAuthenticated: () => auth.isAuthenticated(),
+    hasUserType: (userType: string) => auth.hasUserType(userType),
+    isAdmin: () => auth.isAdmin(),
+    isTaker: () => auth.isTaker(),
+    token: () => auth.token(),
   };
 }

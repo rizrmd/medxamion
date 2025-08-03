@@ -3,10 +3,11 @@ import { defineAPI } from "rlib/server";
 export default defineAPI({
   name: "auth_me",
   url: "/api/auth/me",
-  async handler(arg: {}, { headers }: { headers: Headers }) {
+  async handler(arg: {}) {
     try {
       // Get session token from Authorization header
-      const authHeader = headers.get('Authorization');
+      const req = this.req!;
+      const authHeader = req.headers.get('Authorization');
       const sessionToken = authHeader?.replace('Bearer ', '');
 
       if (!sessionToken) {

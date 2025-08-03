@@ -1,5 +1,32 @@
 # CLAUDE.md Structure
 
+## IMPORTANT: ECrud Component Usage
+- **NEVER create your own CRUD components** - Use the existing ECrud from `@/components/core/ecrud/ecrud`
+- ECrud is a sophisticated component that handles all CRUD operations with advanced features
+- When implementing admin pages or any CRUD functionality, always use ECrud
+- ECrud configuration example:
+```typescript
+import { ECrud } from "@/components/core/ecrud/ecrud";
+import type { CRUDConfig } from "@/components/core/ecrud/ecrud";
+
+const config: CRUDConfig<EntityType> = {
+  entityName: "Entity Name",
+  primaryKey: "id",
+  columns: [...],
+  formFields: [...],
+  softDelete: { enabled: true, field: "deleted_at", method: "null_is_available" }
+};
+
+// Use with API
+<ECrud
+  config={config}
+  apiFunction={api.endpoint}
+  onLoadData={...}
+  onEntitySave={...}
+  onEntityDelete={...}
+/>
+```
+
 ## 1. File Naming Convention
 - All files should be in kebab-case
 - Uses bun latest version

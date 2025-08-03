@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ interface LoginForm {
 }
 
 export default function LoginPage() {
-  const { login, loading, error } = useAuth();
+  const { login, loading, error, isAuthenticated, user, initialized } = useAuth();
   
   const local = useLocal<{
     form: LoginForm;
@@ -30,6 +30,28 @@ export default function LoginPage() {
     showError: false
   });
 
+  // Check authentication and redirect
+  if (initialized && isAuthenticated() && user) {
+    const userType = user.user_type;
+    if (userType === "taker") {
+      navigate("/main/exam");
+    } else if (userType === "internal") {
+      navigate("/admin");
+    } else {
+      navigate("/");
+    }
+    
+    // Return loading while redirecting
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Mengarahkan...</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     local.showError = false;
@@ -40,11 +62,11 @@ export default function LoginPage() {
       
       // Redirect based on user type
       if (local.form.userType === "taker") {
-        navigate("/exam");
+        navigate("/main/exam");
       } else if (local.form.userType === "internal") {
         navigate("/admin");
       } else {
-        navigate("/dashboard");
+        navigate("/");
       }
     } catch (error) {
       local.showError = true;
@@ -55,9 +77,19 @@ export default function LoginPage() {
   const userTypeOptions = [
     { value: "taker", label: "Peserta Ujian" },
     { value: "customer", label: "Pelanggan" },
-    { value: "author", label: "Penulis" },
     { value: "internal", label: "Administrator" },
   ];
+
+  if (!initialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Memuat...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">

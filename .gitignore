@@ -45,8 +45,6 @@ shared/models
 # Upload directory
 upload
 
-# Claude
-.claude
 
 # rlib symlink
 rlib
