@@ -1,6 +1,7 @@
 import { defineAPI } from "rlib/server";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { forceDisconnectUser } from "@/lib/websocket-sessions";
 
 export default defineAPI({
   name: "auth_login",
@@ -85,15 +86,34 @@ export default defineAPI({
         };
       }
 
+      // Force disconnect any existing WebSocket connections for this user
+      forceDisconnectUser(userTableId!);
+
+      // Invalidate all previous sessions for this user
+      await db.sessions.deleteMany({
+        where: {
+          user_id: BigInt(userTableId!)
+        }
+      });
+
+      // Get request info for device tracking
+      const req = this.req!;
+      const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                        req.headers.get('x-real-ip') || 
+                        '';
+      const userAgent = req.headers.get('user-agent') || '';
+
       // Generate session token
       const sessionToken = crypto.randomBytes(32).toString('hex');
       const sessionId = crypto.randomBytes(16).toString('hex');
 
-      // Create session
+      // Create new session with device info
       await db.sessions.create({
         data: {
           id: sessionId,
           user_id: BigInt(userTableId!),
+          ip_address: ipAddress,
+          user_agent: userAgent,
           payload: JSON.stringify({
             token: sessionToken,
             user_type: user_type,

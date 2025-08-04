@@ -35,7 +35,10 @@ const onFetch: onFetch = async ({ url, req }) => {
 };
 const index = (await import("frontend/entry/index.html")).default;
 
-const ws = {};
+const { sessionWebSocketHandler } = await import("./lib/websocket-sessions");
+const ws = {
+  "/ws/session": sessionWebSocketHandler
+};
 
 if (isDev) {
   initDev({

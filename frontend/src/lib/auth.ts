@@ -1,4 +1,5 @@
 import { proxy, useSnapshot } from "valtio";
+import { sessionManager } from "./session-manager";
 
 export interface User {
   id: string;
@@ -80,6 +81,9 @@ export const auth = {
       localStorage.setItem('auth_token', data.data.token);
       localStorage.setItem('auth_user_type', userType);
 
+      // Connect WebSocket session manager
+      sessionManager.updateSessionToken(data.data.token);
+
       return data.data;
     } catch (error) {
       authState.error = (error as Error).message;
@@ -113,6 +117,9 @@ export const auth = {
       authState.error = null;
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user_type');
+      
+      // Disconnect WebSocket
+      sessionManager.disconnect();
     }
   },
 
@@ -144,6 +151,11 @@ export const auth = {
 
       authState.user = data.data.user;
       authState.session = data.data.session;
+
+      // Reconnect WebSocket with new session
+      if (data.data.session?.token) {
+        sessionManager.updateSessionToken(data.data.session.token);
+      }
 
       return data.data;
     } catch (error) {
