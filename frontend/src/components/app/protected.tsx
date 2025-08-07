@@ -1,9 +1,7 @@
-import { baseUrl } from "@/lib/gen/base-url";
+import { api } from "@/lib/api";
 import { useLocal } from "@/lib/hooks/use-local";
 // import { notif } from "@/lib/notif";
 import { navigate } from "@/lib/router";
-import { snakeToCamel } from "@/lib/utils";
-import type { Session } from "better-auth/types";
 import { type FC, type ReactNode } from "react";
 import type { User } from "shared/types";
 import { Alert } from "../ui/global-alert";
@@ -11,63 +9,36 @@ import { AppLoading } from "./loading";
 
 export const current = {
   user: null as User | null,
-  session: null as Session | null,
-  iframe: null as HTMLIFrameElement | null,
-  signoutCallback: undefined as undefined | (() => void),
+  session: null as any | null,
   loaded: false,
   missing_role: [] as string[],
   promise: null as null | Promise<void>,
   done: () => {},
-  syncing: false, // Add flag to prevent duplicate sync calls
 
-  reload() {
-    return new Promise<void>((done) => {
-      current.iframe = document.getElementById(
-        "session-frame"
-      ) as HTMLIFrameElement | null;
-      if (!current.iframe) {
-        current.iframe = document.createElement("iframe");
-        current.iframe.id = "session-frame";
-        current.iframe.src = baseUrl.main + "/api/get-session-frame";
-        current.iframe.style.display = "none";
-        document.body.appendChild(current.iframe);
+  async reload() {
+    try {
+      // Get session from API using cookies
+      const response = await api.auth_session();
+      
+      if (response?.success && response.data) {
+        current.user = response.data.user;
+        current.session = response.data.session;
+      } else {
+        current.user = null;
+        current.session = null;
       }
-
-      const messageHandler = async (e: MessageEvent) => {
-        if (e.data?.action == "signout") {
-          if (current.signoutCallback) current.signoutCallback();
-          current.signoutCallback = undefined;
-        }
-        if (e.data?.action == "session") {
-          // Sync the session cookie to current domain (only if not already syncing)
-          if (e.data.sessionCookie && !current.syncing) {
-            current.syncing = true;
-            try {
-              await fetch('/api/sync-session', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ sessionToken: e.data.sessionCookie }),
-              });
-            } catch (error) {
-              console.error('Failed to sync session cookie:', error);
-            } finally {
-              current.syncing = false;
-            }
-          }
-          
-          current.promise = null;
-          current.loaded = true;
-          current.user = e.data.user;
-          current.session = e.data.session;
-          done();
-          this.done();
-        }
-      };
-
-      window.addEventListener("message", messageHandler);
-    });
+      
+      current.loaded = true;
+      current.promise = null;
+      this.done();
+    } catch (error) {
+      console.error('Failed to load session:', error);
+      current.user = null;
+      current.session = null;
+      current.loaded = true;
+      current.promise = null;
+      this.done();
+    }
   },
 };
 
@@ -81,16 +52,17 @@ export const Protected: FC<{
   allowGuest?: boolean;
   pages?: string[] | null;
 }> = ({ children, role, onLoad, fallbackUrl, allowGuest, pages }) => {
-  const params = new URLSearchParams(location.search);
-  let callbackURL = params.get("callbackURL") as string | undefined;
-  callbackURL = !callbackURL ? window.location.origin : callbackURL;
-
   const local = useLocal({}, async () => {
     if (!current.loaded) {
-      await current.reload();
+      if (!current.promise) {
+        current.promise = current.reload();
+      }
+      await current.promise;
 
       if (!allowGuest && !current.user) {
-        console.log('redirect to /')
+        if (fallbackUrl) {
+          navigate(fallbackUrl);
+        }
       } else {
         if (current.user?.id) {
           // notif.init(current.user.id);
@@ -114,7 +86,6 @@ export const Protected: FC<{
 
         if (!allowGuest && !current.user) Alert.info("Error loading session");
         if (onLoad) {
-          if (!current.loaded) current.loaded = true;
           onLoad({ user: current.user });
         }
       }

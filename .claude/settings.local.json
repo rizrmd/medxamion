@@ -39,7 +39,8 @@
       "Bash(bun:*)",
       "Bash(git reset:*)",
       "Bash(npx --yes tsc --noEmit)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(touch:*)"
     ],
     "deny": []
   }

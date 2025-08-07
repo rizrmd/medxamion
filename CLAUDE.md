@@ -180,21 +180,11 @@ import type { User } from "better-auth/types";
 - This ensures code quality and prevents broken code from reaching the repository
 
 ## 12. Authentication Pattern
-- Uses better-auth library for authentication
-- Multi-domain authentication with cross-domain session sync
+- Custom authentication implementation
+- Cookie-based session management
 - Supports multiple user types: customer, author, affiliate, internal, publisher
 - Each user type links to different tables via id_[type] fields
-- Frontend authentication client:
-```
-import { betterAuth } from "@/lib/better-auth";
-const { data, error } = await betterAuth.signIn({ username, password });
-const session = await betterAuth.getSession();
-```
-- Backend session retrieval includes related entities:
-```
-const session = await utils.getSession(headers);
-// session.user includes customer, author, affiliate, etc. data
-```
+- Session retrieval via `/api/auth/session` endpoint
 
 ## 13. WebSocket/Notification Pattern
 - Real-time notifications via WebSocket

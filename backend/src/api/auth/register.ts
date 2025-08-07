@@ -5,10 +5,10 @@ export default defineAPI({
   url: "/api/auth/register",
   async handler(arg: { email: string; password: string; name: string }) {
     // Example register handler
-    // In real implementation, use better-auth
+    // TODO: Implement registration logic
     return {
       success: false,
-      message: "Register endpoint - implement with better-auth"
+      message: "Register endpoint - not yet implemented"
     };
   },
 });
