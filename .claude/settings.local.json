@@ -40,7 +40,10 @@
       "Bash(git reset:*)",
       "Bash(npx --yes tsc --noEmit)",
       "Bash(git stash:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(mv:*)",
+      "Bash(PGPASSWORD=\"$DATABASE_PASSWORD\" psql -h \"$DATABASE_HOST\" -p \"$DATABASE_PORT\" -U \"$DATABASE_USER\" -d \"$DATABASE_NAME\" -f ../scripts/add-clients-table.sql)",
+      "Bash(echo:*)"
     ],
     "deny": []
   }

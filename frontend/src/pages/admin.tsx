@@ -2,7 +2,7 @@ import { useAuth } from "@/lib/auth";
 import { navigate } from "@/lib/router";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, BookOpen, BarChart3, Settings, LogOut } from "lucide-react";
+import { Users, BookOpen, BarChart3, Settings, LogOut, Building2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
@@ -62,6 +62,13 @@ export default function AdminDashboard() {
   };
 
   const menuItems = [
+    {
+      title: "Manajemen Client",
+      description: "Kelola client dan pengaturan mereka",
+      icon: Building2,
+      href: "/admin/clients",
+      color: "text-cyan-600"
+    },
     {
       title: "Manajemen Peserta",
       description: "Kelola data peserta ujian",
