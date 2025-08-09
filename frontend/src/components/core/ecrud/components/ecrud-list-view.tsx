@@ -27,7 +27,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { Breadcrumbs } from "./breadcrumbs";
 import { EFilter } from "../../elist/efilter";
 import { ETable } from "../../elist/etable";
 import { css } from "goober";
@@ -39,6 +39,21 @@ import type {
   ColumnConfig,
   CRUDConfig,
 } from "../types";
+
+// Helper function to resolve main CRUD listTitle with fallback to entityNamePlural/entityName
+const resolveMainListTitle = <T extends BaseEntity>(
+  config: CRUDConfig<T>,
+  showTrash: boolean
+): string => {
+  if (config.listTitle) {
+    if (typeof config.listTitle === "function") {
+      return config.listTitle({ showTrash });
+    }
+    return config.listTitle;
+  }
+  // Fallback to entityNamePlural or entityName
+  return config.entityNamePlural || `${config.entityName}s`;
+};
 
 interface ECrudListViewProps<T extends BaseEntity> {
   config: CRUDConfig<T>;
@@ -426,7 +441,7 @@ export const ECrudListView = <T extends BaseEntity>({
                 displayMode === "compact" ? "text-lg" : ""
               )}>
                 <span>
-                  {config.entityNamePlural || `${config.entityName}s`}
+                  {resolveMainListTitle(config, read.showTrash)}
                 </span>
                 {config.actions?.list?.bulkSelect &&
                   read.bulkSelection.selectedIds.length > 0 && (

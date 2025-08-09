@@ -368,7 +368,12 @@ export const useECrudActions = <T extends BaseEntity>(
           if (write.formMode === "create") {
             write.formMode = "edit";
             write.selectedEntity = savedEntity;
-            write.activeTab = "main"; // Reset to main tab after creation
+            // For chapter books, set active tab to chapter tab after creation
+            if (savedEntity.is_chapter && !write.activeTab) {
+              write.activeTab = "nested-0";
+            } else if (!write.activeTab) {
+              write.activeTab = "main";
+            }
             onEntitySelect?.(savedEntity);
           } else {
             // For edit mode, update selectedEntity with the saved data

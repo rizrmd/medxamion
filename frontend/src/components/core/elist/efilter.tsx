@@ -24,7 +24,7 @@ export interface FilterConfig {
     | "boolean"
     | "relation";
   options?: { value: string | boolean; label: string }[];
-  relationConfig?: any; // ModelRelationConfig
+  relationConfig?: import("../ecrud/types").ModelRelationConfig;
   placeholder?: string;
   defaultValue?: any;
 }
@@ -221,7 +221,7 @@ export const EFilter = (props: EFilterProps) => {
                     );
                   })}
                   <div className="flex justify-end gap-2 pt-2 ">
-                    <Button type="submit" size="sm" className="bg-(--esensi-color) text-(--esensi-color-i) hover:bg-(--esensi-color-alt)">
+                    <Button type="submit" size="sm" variant="default">
                       Filter Data
                     </Button>
                   </div>

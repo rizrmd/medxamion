@@ -145,7 +145,8 @@ export interface NestedECrudConfig<
   TParent extends FlexibleEntity,
   TNested extends FlexibleEntity
 > {
-  title: string;
+  title: string | ((state: { showTrash: boolean }) => string);
+  listTitle?: string | ((state: { showTrash: boolean }) => string);
   config: CRUDConfig<TNested>;
   parentField: keyof TParent;
   nestedParentField: keyof TNested;
@@ -232,6 +233,7 @@ export interface NestedECrudConfig<
 export interface CRUDConfig<T extends FlexibleEntity> {
   entityName: string;
   entityNamePlural?: string;
+  listTitle?: string | ((state: { showTrash: boolean }) => string);
   api?: APIConfig<T>;
   columns: ColumnConfig<T>[];
   filters: FilterConfig[];
@@ -240,6 +242,7 @@ export interface CRUDConfig<T extends FlexibleEntity> {
     | ((state: {
         showTrash: boolean;
         formMode: "create" | "edit" | null;
+        selectedEntity?: T | null;
       }) => FormFieldConfig<T>[]);
   actions?: {
     list?: {

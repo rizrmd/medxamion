@@ -3,6 +3,9 @@ import { useEffect, useState, useCallback } from "react";
 import type { RelationComboBoxOption } from "@/components/ui/relation-combobox";
 import { toast } from "sonner";
 import { useIsMobile } from "@/lib/hooks/use-mobile";
+import { ECrudErrorBoundary } from "./utils/error-boundary";
+import { useECrudPerformanceMonitor } from "./utils/performance";
+import { validateECrudConfig, debugECrudConfig } from "./utils/config-validator";
 
 // Import modular components and hooks
 import { useECrudState } from "./hooks/use-ecrud-state";
@@ -42,12 +45,23 @@ export type {
   ECrudProps,
 } from "./types";
 
-export const ECrud = <T extends FlexibleEntity>(props: ECrudProps<T>) => {
+const ECrudInner = <T extends FlexibleEntity>(props: ECrudProps<T>) => {
   const { config, breadcrumbs, breadcrumbConfig, customFormRenderer, customListRender } = props;
   const isMobile = useIsMobile();
   
-  // Keep side-by-side layout but adjust behavior for mobile
-  const effectiveLayout = props.layout;
+  // Performance monitoring
+  const performanceMonitor = useECrudPerformanceMonitor(config.entityName);
+  
+  // Validate configuration in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      debugECrudConfig(config);
+    }
+  }, [config]);
+  
+  // Default to "default" layout instead of side-by-side to avoid confusion
+  // Side-by-side should be explicitly requested
+  const effectiveLayout = props.layout || "default";
 
   // Use the modular state management hook
   const {
@@ -210,6 +224,7 @@ export const ECrud = <T extends FlexibleEntity>(props: ECrudProps<T>) => {
       return config.formFields({
         showTrash: write.showTrash,
         formMode: write.formMode,
+        selectedEntity: write.selectedEntity,
       });
     }
     return config.formFields;
@@ -411,11 +426,17 @@ export const ECrud = <T extends FlexibleEntity>(props: ECrudProps<T>) => {
       pagination?: { page: number; limit: number },
       sorting?: { field: string; order: 'asc' | 'desc' }
     ) => {
+      // Always prefer custom onLoadData handler if available
+      if (nestedConfig.onLoadData) {
+        return await nestedConfig.onLoadData(parentId, filters, pagination, sorting);
+      }
+      
+      // Fallback to legacy onLoadNestedData if available
       if (nestedConfig.onLoadNestedData) {
         return await nestedConfig.onLoadNestedData(parentId, filters, pagination, sorting);
       }
 
-      // Default: use the simple nested API approach
+      // Default: use the simple nested API approach only if no custom handlers exist
       if (nestedConfig.model && props.apiFunction) {
         try {
           const response = await props.apiFunction({
@@ -593,6 +614,14 @@ export const ECrud = <T extends FlexibleEntity>(props: ECrudProps<T>) => {
 
     return [];
   };
+
+  // Performance monitoring for renders
+  useEffect(() => {
+    performanceMonitor.startRender();
+    return () => {
+      performanceMonitor.endRender();
+    };
+  });
 
   return (
     <Card className={`flex-1 flex ${
@@ -855,5 +884,22 @@ export const ECrud = <T extends FlexibleEntity>(props: ECrudProps<T>) => {
         </>
       )}
     </Card>
+  );
+};
+
+// Main ECrud component wrapped with error boundary
+export const ECrud = <T extends FlexibleEntity>(props: ECrudProps<T>) => {
+  return (
+    <ECrudErrorBoundary
+      entityName={props.config.entityName}
+      onReset={() => {
+        // Reset any cached state if needed
+        if (props.onDataChange) {
+          props.onDataChange([]);
+        }
+      }}
+    >
+      <ECrudInner {...props} />
+    </ECrudErrorBoundary>
   );
 };

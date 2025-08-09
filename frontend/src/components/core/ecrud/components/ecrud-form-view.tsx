@@ -1,4 +1,4 @@
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { Breadcrumbs } from "./breadcrumbs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,33 @@ import type {
   CRUDConfig,
   FormFieldConfig,
 } from "../types";
+
+// Helper function to resolve nested title (static string or dynamic function)
+const resolveNestedTitle = (
+  title: string | ((state: { showTrash: boolean }) => string),
+  showTrash: boolean
+): string => {
+  if (typeof title === "function") {
+    return title({ showTrash });
+  }
+  return title;
+};
+
+// Helper function to resolve nested listTitle with fallback to title
+const resolveNestedListTitle = (
+  listTitle: string | ((state: { showTrash: boolean }) => string) | undefined,
+  title: string | ((state: { showTrash: boolean }) => string),
+  showTrash: boolean
+): string => {
+  if (listTitle) {
+    if (typeof listTitle === "function") {
+      return listTitle({ showTrash });
+    }
+    return listTitle;
+  }
+  // Fallback to title if listTitle is not provided
+  return resolveNestedTitle(title, showTrash);
+};
 
 // Props interface for OriginalForm component
 export interface OriginalFormProps {
@@ -713,9 +740,20 @@ export const ECrudFormView = <T extends BaseEntity>({
   // State for "return to list" checkbox
   const [returnToList, setReturnToList] = useState(() => {
     const stored = localStorage.getItem(RETURN_TO_LIST_KEY);
+    
+    // Check if this is a create mode with potential nested tabs (like chapter books)
+    const isCreateWithNestedTabs = read.formMode === "create" && 
+      config.nested && 
+      config.nested.length > 0;
+    
     // If there are tabs and we're creating a new entry, default to false (stay on form)
     // Otherwise use stored preference or default to true
     if (hasNestedTabs && read.formMode === "create") {
+      return false;
+    }
+    
+    // For create mode with nested tabs, default to false to stay on form after save
+    if (isCreateWithNestedTabs) {
       return false;
     }
 
@@ -791,7 +829,7 @@ export const ECrudFormView = <T extends BaseEntity>({
                 {read.formMode === "edit" && navigationInfo.totalCount > 1 && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className="text-sm text-muted-foreground hidden sm:inline">
-                      Data ke{" "}
+                      {config.entityName} ke{" "}
                       <Badge variant={"outline"}>
                         {navigationInfo.currentPosition}
                       </Badge>{" "}
@@ -801,7 +839,7 @@ export const ECrudFormView = <T extends BaseEntity>({
                       </Badge>{" "}
                     </span>
                     <span className="text-sm text-muted-foreground sm:hidden">
-                      Data ke {navigationInfo.currentPosition} dari{" "}
+                      {config.entityName} ke {navigationInfo.currentPosition} dari{" "}
                       {navigationInfo.totalCount}
                     </span>
                     <div className="flex gap-1">
@@ -1021,7 +1059,7 @@ export const ECrudFormView = <T extends BaseEntity>({
           {read.formMode === "edit" && navigationInfo.totalCount > 1 && (
             <div className="flex items-center gap-2 flex-shrink-0">
               <span className="text-sm text-muted-foreground hidden sm:inline">
-                Data ke{" "}
+                {config.entityName} ke{" "}
                 <Badge variant={"outline"}>
                   {navigationInfo.currentPosition}
                 </Badge>{" "}
@@ -1029,7 +1067,7 @@ export const ECrudFormView = <T extends BaseEntity>({
                 <Badge variant={"outline"}>{navigationInfo.totalCount}</Badge>{" "}
               </span>
               <span className="text-sm text-muted-foreground sm:hidden">
-                Data ke {navigationInfo.currentPosition} dari{" "}
+                {config.entityName} ke {navigationInfo.currentPosition} dari{" "}
                 {navigationInfo.totalCount}
               </span>
               <div className="flex gap-1">
@@ -1132,7 +1170,7 @@ export const ECrudFormView = <T extends BaseEntity>({
                       >
                         <div className="w-full">
                           <h3 className="text-lg font-semibold mb-4 border-b pb-2">
-                            {nestedConfig.title}
+                            {resolveNestedListTitle(nestedConfig.listTitle, nestedConfig.title, read.showTrash)}
                           </h3>
                           <ECrud
                             key={`nested-section-${index}-${read.selectedEntity?.id}-${nestedRefreshKey}`}
@@ -1156,7 +1194,7 @@ export const ECrudFormView = <T extends BaseEntity>({
                             urlState={{
                               baseUrl: `${
                                 urlState?.baseUrl || ""
-                              }/nested/${nestedConfig.title
+                              }/nested/${resolveNestedTitle(nestedConfig.title, read.showTrash)
                                 .toLowerCase()
                                 .replace(/\s+/g, "-")}`,
                             }}
@@ -1182,6 +1220,44 @@ export const ECrudFormView = <T extends BaseEntity>({
                                         pagination,
                                         sorting
                                       );
+                                    }
+                                    return { data: [], total: 0 };
+                                  }
+                                : undefined
+                            }
+                            onLoadTrashData={
+                              nestedHandlers && (nestedConfig.onLoadTrashData || nestedConfig.apiFunction)
+                                ? async (filters, pagination, sorting) => {
+                                    if (read.selectedEntity?.id) {
+                                      // Use explicit onLoadTrashData handler if available
+                                      if (nestedConfig.onLoadTrashData) {
+                                        return await nestedConfig.onLoadTrashData(
+                                          read.selectedEntity.id,
+                                          filters,
+                                          pagination,
+                                          sorting
+                                        );
+                                      }
+                                      // Fallback to apiFunction with listTrash action
+                                      if (nestedConfig.apiFunction) {
+                                        try {
+                                          const response = await nestedConfig.apiFunction({
+                                            action: "listTrash",
+                                            [nestedConfig.nestedParentField]: read.selectedEntity.id,
+                                            ...filters,
+                                            ...pagination,
+                                            ...(sorting?.field && sorting?.order ? { sort: sorting.field, order: sorting.order } : {}),
+                                          });
+                                          if (response.success) {
+                                            return {
+                                              data: response.data?.data || [],
+                                              total: response.data?.total || 0
+                                            };
+                                          }
+                                        } catch (error) {
+                                          console.error("Failed to load trash data via apiFunction:", error);
+                                        }
+                                      }
                                     }
                                     return { data: [], total: 0 };
                                   }
@@ -1220,6 +1296,20 @@ export const ECrudFormView = <T extends BaseEntity>({
                                   }
                                 : undefined
                             }
+                            onEntityRestore={
+                              nestedConfig.onEntityRestore
+                                ? async (entityData) => {
+                                    if (read.selectedEntity?.id) {
+                                      return await nestedConfig.onEntityRestore(
+                                        entityData,
+                                        nestedConfig.apiFunction,
+                                        read.selectedEntity.id
+                                      );
+                                    }
+                                    throw new Error("Restore handler not configured");
+                                  }
+                                : undefined
+                            }
                           />
                         </div>
                       </div>
@@ -1245,7 +1335,7 @@ export const ECrudFormView = <T extends BaseEntity>({
                         key={`tab-${index}`}
                         value={`nested-${index}`}
                       >
-                        {nestedConfig.title}
+                        {resolveNestedTitle(nestedConfig.title, read.showTrash)}
                       </TabsTrigger>
                     ))}
                   </TabsList>
@@ -1325,7 +1415,7 @@ export const ECrudFormView = <T extends BaseEntity>({
                         urlState={{
                           baseUrl: `${
                             urlState?.baseUrl || ""
-                          }/nested/${nestedConfig.title
+                          }/nested/${resolveNestedTitle(nestedConfig.title, read.showTrash)
                             .toLowerCase()
                             .replace(/\s+/g, "-")}`,
                         }}
@@ -1351,6 +1441,44 @@ export const ECrudFormView = <T extends BaseEntity>({
                                     pagination,
                                     sorting
                                   );
+                                }
+                                return { data: [], total: 0 };
+                              }
+                            : undefined
+                        }
+                        onLoadTrashData={
+                          nestedHandlers && (nestedConfig.onLoadTrashData || nestedConfig.apiFunction)
+                            ? async (filters, pagination, sorting) => {
+                                if (read.selectedEntity?.id) {
+                                  // Use explicit onLoadTrashData handler if available
+                                  if (nestedConfig.onLoadTrashData) {
+                                    return await nestedConfig.onLoadTrashData(
+                                      read.selectedEntity.id,
+                                      filters,
+                                      pagination,
+                                      sorting
+                                    );
+                                  }
+                                  // Fallback to apiFunction with listTrash action
+                                  if (nestedConfig.apiFunction) {
+                                    try {
+                                      const response = await nestedConfig.apiFunction({
+                                        action: "listTrash",
+                                        [nestedConfig.nestedParentField]: read.selectedEntity.id,
+                                        ...filters,
+                                        ...pagination,
+                                        ...(sorting?.field && sorting?.order ? { sort: sorting.field, order: sorting.order } : {}),
+                                      });
+                                      if (response.success) {
+                                        return {
+                                          data: response.data?.data || [],
+                                          total: response.data?.total || 0
+                                        };
+                                      }
+                                    } catch (error) {
+                                      console.error("Failed to load trash data via apiFunction:", error);
+                                    }
+                                  }
                                 }
                                 return { data: [], total: 0 };
                               }
@@ -1384,6 +1512,20 @@ export const ECrudFormView = <T extends BaseEntity>({
                                 throw new Error(
                                   "Delete handler not configured"
                                 );
+                              }
+                            : undefined
+                        }
+                        onEntityRestore={
+                          nestedConfig.onEntityRestore
+                            ? async (entityData) => {
+                                if (read.selectedEntity?.id) {
+                                  return await nestedConfig.onEntityRestore(
+                                    entityData,
+                                    nestedConfig.apiFunction,
+                                    read.selectedEntity.id
+                                  );
+                                }
+                                throw new Error("Restore handler not configured");
                               }
                             : undefined
                         }

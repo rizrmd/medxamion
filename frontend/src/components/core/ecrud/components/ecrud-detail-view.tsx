@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { Breadcrumbs } from "./breadcrumbs";
 import { useSnapshot } from "valtio";
 import type {
   BaseEntity,
