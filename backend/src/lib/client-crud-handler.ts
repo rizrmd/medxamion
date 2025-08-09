@@ -1,5 +1,8 @@
 import { crudHandler } from "@/lib/crud-handler";
 import { getClientFromRequest } from "./client-context";
+import type { Prisma } from "shared/models";
+
+type PrismaModelName = Prisma.ModelName;
 
 interface ClientCrudOptions {
   requireClient?: boolean;
@@ -7,7 +10,8 @@ interface ClientCrudOptions {
   softDelete?: {
     enabled: boolean;
     field: string;
-    method: "null_is_available" | "boolean_flag";
+    method: "null_is_deleted" | "null_is_available" | "true_is_deleted" | "value_is_deleted";
+    deletedValue?: any;
   };
   primaryKey?: string;
   list?: { 
@@ -16,11 +20,11 @@ interface ClientCrudOptions {
   };
   nested?: Record<string, {
     parentField: string;
-    model: string;
+    model: PrismaModelName;
   }>;
 }
 
-export function clientCrudHandler(modelName: string, options: ClientCrudOptions = {}) {
+export function clientCrudHandler(modelName: PrismaModelName, options: ClientCrudOptions = {}) {
   return async function(this: any, arg: any) {
     const req = this.req!;
     const client = getClientFromRequest(req);

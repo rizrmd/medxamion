@@ -1,12 +1,10 @@
-import type { Request } from "express";
-
 export interface ClientContext {
   clientId: number;
   clientSlug: string;
   subdomain?: string;
 }
 
-export function getClientFromRequest(req: Request): ClientContext | null {
+export function getClientFromRequest(req: any): ClientContext | null {
   const host = req.headers.host || "";
   const subdomain = host.split(".")[0];
   

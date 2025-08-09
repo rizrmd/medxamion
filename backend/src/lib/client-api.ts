@@ -10,7 +10,7 @@ interface ClientAPIOptions {
 export function defineClientAPI<T, R>(config: {
   name: string;
   url: string;
-  handler: (this: { req?: Request; client?: ClientContext }, arg: T) => Promise<R>;
+  handler: (this: { req?: any; client?: ClientContext | null }, arg: T) => Promise<R>;
   options?: ClientAPIOptions;
 }) {
   return defineAPI({

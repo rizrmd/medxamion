@@ -47,5 +47,8 @@ export type {
 
 export type {
   BreadcrumbItem,
-  BreadcrumbState,
 } from "../types";
+
+export type {
+  BreadcrumbState,
+} from "./breadcrumbs";

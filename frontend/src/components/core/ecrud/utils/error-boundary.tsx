@@ -38,8 +38,8 @@ export class ECrudErrorBoundary extends React.Component<
     this.setState({ error, errorInfo });
 
     // Log to error tracking service if available
-    if (window.errorTracker) {
-      window.errorTracker.captureException(error, {
+    if ((window as any).errorTracker) {
+      (window as any).errorTracker.captureException(error, {
         context: "ECrud",
         entityName: this.props.entityName,
         errorInfo,
@@ -121,7 +121,7 @@ export function withErrorBoundary<T extends object>(
 ) {
   return React.forwardRef<any, T>((props, ref) => (
     <ECrudErrorBoundary entityName={entityName}>
-      <Component {...props} ref={ref} />
+      <Component {...(props as any)} ref={ref} />
     </ECrudErrorBoundary>
   ));
 }

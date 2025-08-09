@@ -48,7 +48,9 @@ export function validateECrudConfig<T extends FlexibleEntity>(
   validateSoftDelete(config.softDelete, errors, warnings, ctx);
   
   // Nested CRUD validation
-  validateNestedCRUD(config.nested, errors, warnings, ctx);
+  if (config.nested) {
+    validateNestedCRUD(config.nested, errors, warnings, ctx);
+  }
 
   return {
     isValid: errors.length === 0,

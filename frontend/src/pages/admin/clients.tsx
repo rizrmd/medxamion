@@ -21,7 +21,6 @@ interface Client {
 
 const clientsConfig: CRUDConfig<Client> = {
   entityName: "Client",
-  primaryKey: "id",
   filters: [
     {
       key: "is_active",

@@ -7,7 +7,6 @@
 
 import { ECrud } from "../ecrud";
 import { useCrud } from "@/lib/crud-hook";
-// import { api } from "@/lib/gen/main"; // TODO: Replace with your API import
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +22,15 @@ const formatDateIndonesian = (date: Date | string) => {
 import { useMemo, useCallback } from "react";
 import type { CRUDConfig, FlexibleEntity } from "../types";
 
+// Mock API for examples - replace with your actual API import
+const api = {
+  books: {
+    create: (entity: any) => Promise.resolve({ success: true, data: entity }),
+    update: (id: any, entity: any) => Promise.resolve({ success: true, data: entity }),
+    delete: (id: any) => Promise.resolve({ success: true }),
+  }
+} as any;
+
 // Example 1: Basic CRUD Configuration
 interface Book extends FlexibleEntity {
   name: string;
@@ -34,6 +42,7 @@ interface Book extends FlexibleEntity {
   page_count?: number;
   isbn?: string;
   price?: number;
+  view_count?: number; // For performance metrics
 }
 
 export const basicBookConfig: CRUDConfig<Book> = {
@@ -570,9 +579,8 @@ export const performanceOptimizedConfig: CRUDConfig<Book> = {
 // Example 7: Error Handling Best Practices
 export function BooksWithErrorHandling() {
   const crud = useCrud<Book>(api.books, {
-    onError: (error, context) => {
-      console.error(`Book CRUD Error (${context}):`, error);
-      // Send to error tracking service
+    breadcrumbConfig: {
+      renderNameLabel: async (book) => book.name || "Buku Tanpa Judul",
     }
   });
 
@@ -596,8 +604,8 @@ export function BooksWithErrorHandling() {
   return (
     <ECrud
       config={basicBookConfig}
-      onEntitySave={handleSaveError}
       {...crud}
+      onEntitySave={handleSaveError}
     />
   );
 }

@@ -76,6 +76,7 @@ export interface FormFieldConfig<T> {
   disabled?: boolean | ((data: T) => boolean);
   section?: string;
   multiple?: boolean;
+  rows?: number; // For textarea fields
   fileUploadConfig?: {
     accept?: string;
     maxFiles?: number;
@@ -160,9 +161,23 @@ export interface NestedECrudConfig<
     left?: string;
     right?: string;
   };
+  // API function for handling CRUD operations
+  apiFunction?: (params: any) => Promise<{
+    success: boolean;
+    data?: any;
+    total?: number;
+    message?: any;
+    status?: any;
+  }>;
   // Optional custom handlers for advanced use cases
   onLoadNestedData?: (
     parentId: string | number
+  ) => Promise<{ data: TNested[]; total: number }>;
+  onLoadTrashData?: (
+    parentId: string | number,
+    filters?: any,
+    pagination?: any,
+    sorting?: any
   ) => Promise<{ data: TNested[]; total: number }>;
   onSaveNested?: (
     parentId: string | number,

@@ -1,15 +1,21 @@
 import { getClientHeaders } from "./client-context";
+import type { ClientInfo } from "./client-context";
 
 // Wrapper for API calls with client context
 export async function clientApi<T = any>(
   endpoint: string,
   options: RequestInit = {},
-  client: { id: number; slug: string } | null = null
+  client: ClientInfo | null = null
 ): Promise<T> {
-  const headers = {
+  const clientHeaders = getClientHeaders(client);
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...getClientHeaders(client),
-    ...options.headers
+    ...(clientHeaders && Object.fromEntries(
+      Object.entries(clientHeaders).filter(([_, value]) => value !== undefined)
+    )),
+    ...(options.headers && Object.fromEntries(
+      Object.entries(options.headers as Record<string, string>).filter(([_, value]) => value !== undefined)
+    ))
   };
   
   const response = await fetch(endpoint, {
@@ -25,7 +31,7 @@ export async function clientApi<T = any>(
 }
 
 // Create client-aware API client
-export function createClientApiClient(client: { id: number; slug: string } | null) {
+export function createClientApiClient(client: ClientInfo | null) {
   return {
     get: <T = any>(url: string) => 
       clientApi<T>(url, { method: "GET" }, client),

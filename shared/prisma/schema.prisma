@@ -19,6 +19,7 @@ model clients {
   created_at   DateTime? @default(now()) @db.Timestamptz(6)
   updated_at   DateTime? @db.Timestamptz(6)
   deleted_at   DateTime? @db.Timestamptz(6)
+  exams        exams[]
 
   @@index([slug], map: "clients_slug_index")
   @@index([subdomain], map: "clients_subdomain_index")
@@ -212,6 +213,7 @@ model exam_item {
 
 model exams {
   id           Int          @id @default(autoincrement())
+  client_id    Int
   code         String       @db.VarChar(255)
   name         String       @db.VarChar(255)
   description  String?
@@ -224,6 +226,10 @@ model exams {
   attempts     attempts[]
   deliveries   deliveries[]
   exam_item    exam_item[]  @ignore
+  clients      clients      @relation(fields: [client_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "exams_client_id_foreign")
+
+  @@index([client_id], map: "idx_exams_client_id")
+  @@unique([client_id, code], map: "exams_client_id_code_unique")
 }
 
 model failed_jobs {

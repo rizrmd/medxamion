@@ -1,4 +1,4 @@
-# Database Workflow - Esensi Project
+# Database Workflow -  Project
 
 ## Overview
 This project uses a **database-first workflow** with Prisma migrations to manage schema changes safely between development and production.

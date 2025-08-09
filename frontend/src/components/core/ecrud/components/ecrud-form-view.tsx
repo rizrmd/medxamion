@@ -1300,7 +1300,7 @@ export const ECrudFormView = <T extends BaseEntity>({
                               nestedConfig.onEntityRestore
                                 ? async (entityData) => {
                                     if (read.selectedEntity?.id) {
-                                      return await nestedConfig.onEntityRestore(
+                                      return await nestedConfig.onEntityRestore!(
                                         entityData,
                                         nestedConfig.apiFunction,
                                         read.selectedEntity.id
@@ -1519,7 +1519,7 @@ export const ECrudFormView = <T extends BaseEntity>({
                           nestedConfig.onEntityRestore
                             ? async (entityData) => {
                                 if (read.selectedEntity?.id) {
-                                  return await nestedConfig.onEntityRestore(
+                                  return await nestedConfig.onEntityRestore!(
                                     entityData,
                                     nestedConfig.apiFunction,
                                     read.selectedEntity.id
