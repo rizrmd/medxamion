@@ -57,7 +57,10 @@
       "Bash(git pull:*)",
       "Bash(curl:*)",
       "Bash(git log:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "mcp__browsermcp__browser_screenshot",
+      "Bash(ip route:*)",
+      "mcp__browsermcp__browser_type"
     ],
     "deny": []
   }

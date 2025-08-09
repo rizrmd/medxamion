@@ -184,7 +184,7 @@ export default function ClientsPage() {
           breadcrumbs={breadcrumbs}
           apiFunction={api.clients}
           onLoadData={async (filters, pagination, sorting) => {
-            return await api.clients({
+            const response = await api.clients({
               action: "list",
               ...filters,
               page: pagination?.page || 1,
@@ -192,6 +192,14 @@ export default function ClientsPage() {
               sort: sorting?.field?.toString(),
               order: sorting?.direction,
             });
+            // Transform response to match ECrud expected format
+            if (response.success && response.data) {
+              return {
+                data: response.data.data || response.data,
+                total: response.data.total || (Array.isArray(response.data) ? response.data.length : 0)
+              };
+            }
+            return { data: [], total: 0 };
           }}
           onEntitySave={async (entity, mode) => {
             if (mode === "create") {
@@ -218,7 +226,6 @@ export default function ClientsPage() {
               id: entity.id,
             });
           }}
-          layout="side-by-side"
           emptySelectionMessage="Pilih client dari daftar untuk melihat atau mengedit"
         />
       </div>

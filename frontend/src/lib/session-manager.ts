@@ -8,13 +8,13 @@ export class SessionManager {
   private sessionToken: string | null = null;
 
   constructor() {
-    // Automatically connect when authenticated
-    this.init();
+    // Delay initialization to avoid circular dependency issues
+    setTimeout(() => this.init(), 0);
   }
 
   async init() {
     // Check if user is authenticated
-    if (authState.session?.token) {
+    if (authState && authState.session?.token) {
       this.sessionToken = authState.session.token;
       this.connect();
     } else {
@@ -145,8 +145,10 @@ export class SessionManager {
     this.disconnect();
     
     // Clear auth state
-    authState.user = null;
-    authState.session = null;
+    if (authState) {
+      authState.user = null;
+      authState.session = null;
+    }
     
     // Show notification to user
     alert(message || 'Sesi Anda telah berakhir karena login di perangkat lain');
@@ -209,5 +211,11 @@ export class SessionManager {
   }
 }
 
-// Create singleton instance
-export const sessionManager = new SessionManager();
+// Create singleton instance lazily
+let _sessionManager: SessionManager | null = null;
+export const sessionManager = (() => {
+  if (!_sessionManager) {
+    _sessionManager = new SessionManager();
+  }
+  return _sessionManager;
+})();
